@@ -36,8 +36,8 @@ inquiry <- function() {                                                         
   if (ty == 0L) {                                                                 #
     UNcode <- NA_integer_                                                         #
     while (is.na(UNcode) || UNcode < 1L || UNcode > 999L) {                       #
-      cat("Enter the numeric 3 digit UN code for your country."                   #
-          "see 'www.nationsonline.org/oneworld/countrycodes.htm'",sep="\n")       #
+      cat("Enter the numeric 3 digit UN code for your country.",                   #
+          "See 'www.nationsonline.org/oneworld/countrycodes.htm'",sep="\n")       #
       UNcode <- readline("\n(ex. 124 for Canada): ")                              #
       UNcode <- suppressWarnings(as.integer(UNcode)) }                            #
   } else {                                                                        #
@@ -108,7 +108,7 @@ dirs <- file.path(folder,folder2,folder3)                # Will add separator "/
 # Input variograms                                                                #
                                                                                   #
 folder <- "A3_Variogram"                                                          #
-filev <- paste(folder,"/NCMP_",ele,"_Variogram.csv",sep="_")                      #
+filev <- paste(folder,"/NCMP_",ele,"_Variogram.csv",sep="")                      #
                                                                                   #
 folder <- "A4_Region_Average"                                                     #
 folder2 <- "A1_Grid_Squares"                                                      #
@@ -399,7 +399,7 @@ for (ne in ix) {                                                 # loop for indi
         Ix <- rep(NA,length(sqs))                   # set all grid sqs to missing #
 	NCMP[z,nm] <- NA }            # make it clear regional av is also missing #
                                                                                   #
-      X <- cbind(Dsq[sqs,c(1,6:8)],Index=Ix)           # matrix of grid sq values #
+      X <- cbind(Dsq[sqs,c(1,6:8)],Index=t(Ix))           # matrix of grid sq values #
       write.csv(X,file=fileg[z],row.names=FALSE,na="-99.9")     # write into file #
                                                                                   #
 #    Region average calculated. Done!                                             #
@@ -415,7 +415,7 @@ for (ne in ix) {                                                 # loop for indi
                                                                                   #
   cat("\t Writing results",fill=TRUE)                  # Write update in terminal #
   X <- data.frame(Year=rep(nyb:nye,each=13),Month=rep(1:13,times=nyrs),           #
-                  Index=t(NCMP),"No of Stns"=t(NT),check.names=FALSE)             #
+                  Index=as.vector(t(NCMP)),"No of Stns"=as.vector(t(NT)),check.names=FALSE)             #
   write.csv(X,file=filez[ne],row.names=FALSE,na="-99.9")        # write into file #
                                                                                   #
 #    Finished writing. Done!                                                      #
