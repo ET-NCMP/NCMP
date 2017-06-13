@@ -353,7 +353,7 @@ for (ne in ix) {                                                 # loop for indi
 #    F[is.na(F)] <- 0                                         # replace NA with 0 #
 ###################################################################################
 
-    fileg <- file.path(folder,folder2,paste("NCMP_",ele[ne],nyb:nye,cname[nm],".csv",sep=""))
+    fileg <- file.path(folder,folder2,paste("NCMP_",ele[ne],nyb:nye,cnames[nm],".csv",sep=""))
     cat("\t\t Calculating Region Average",fill=TRUE)     # Write update in terminal
     for (ny in nyb:nye) {                                      # loop through years
 
