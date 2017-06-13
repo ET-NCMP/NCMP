@@ -52,9 +52,9 @@ inquiry <- function() {                                                         
 # Could plausibly have different years for variogram and regional average,        #
 # in which case should consider allowing a different year range                   #
   y1 <- 0L                                                                        #
-  while (is.na(y1) || y1 < 1950L || y1 > 2010L) {                                 #
+  while (is.na(y1) || y1 < 1900L || y1 > 2010L) {                                 #
     cat("Enter beginning year for region average")                                #
-    y1 <- readline("\n(between 1950 and 2010, ex. 1950): ")                       #
+    y1 <- readline("\n(between 1900 and 2010, ex. 1950): ")                       #
     y1 <- suppressWarnings(as.integer(y1)) }                                      #
                                                                                   #
   y2 <- 0L                                                                        #
@@ -65,7 +65,7 @@ inquiry <- function() {                                                         
                                                                                   #
 # 1 hour for 100 stations would be a VERY slow PC                                 #
   cat("Please note that this program is heavily computational.",                  #
-      "It may require one hour for one index for 100 stations.",                  #					  #
+      "It may require one hour for one index for 100 stations.",                  #
       "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",                   #
       "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",     #
       "For NCMP 3, Standardized Precipitation Index, enter 3.",                   #
@@ -79,7 +79,17 @@ inquiry <- function() {                                                         
     ne <- readline("\nEnter the desired NCMP number (between 1 and 7, or 0 for all): ")
     ne <- suppressWarnings(as.integer(ne)) }                                      #
                                                                                   #
-  c(ty,UNcode,x,y1,y2,ne) }                                                       #
+  cat("Choose a grid spacing for the interpolation.",                             #
+      "Allowed grid spacings are 0.1, 0.25, 0.50, 1.0 or 2.0 degrees.",           #
+      "Smaller grid spacings will give a more accurate result",                   #
+      "but will run more slowly.",sep="\n")                                       #
+                                                                                  #
+  res <- NA_real_                                                                 #
+  while (is.na(res) || res < 0.1 || res > 2.0) {                                  #
+    res <- readline("\nEnter the desired grid resolution 0.1, 0.25, 0.5, 1.0 or 2.0: ")  #
+    res <- suppressWarnings(as.numeric(res)) }                                    #
+                                                                                  #
+  c(ty,UNcode,x,y1,y2,ne,res) }                                                   #
                                                                                   #
 #    User input collected. Done!                                                  #
 ###################################################################################
@@ -92,6 +102,7 @@ nstn <- a[3]
 nyb <- a[4]
 nye <- a[5]
 ne <- a[6]
+res <- a[7]
 
 ###################################################################################
 #    Creates directories for output files                                         #
@@ -178,16 +189,10 @@ if (lngr > 180) {                                                               
   lngr <- 360-lngr                                                                #
   lngmin <- lngmax }                                                              #
                                                                                   #
-#Option 1: set box size so that have > 100 squares                                #
-#z <- round(latr/lngr,1)               # ratio of lat/long to create square boxes #
-#xlng <- round(sqrt(100/z),0)                        # number of boxes across lon #
-#xlat <- as.integer(z*xlng+1)                        # number of boxes across lat #
-#slng <- round(lngr/xlng,1)                             # length of each long box #
-#slat <- round(latr/xlat,1)                              # length of each lat box #
                                                                                   #
-#Option 2: set 2 deg x 2 deg squares                                              #
-slng <- 2.0                                                                       #
-slat <- 2.0                                                                       #
+#Set size of squares in degrees (now user-set)                                    #
+slng <- res                                                                       #
+slat <- res                                                                       #
 xlng <- as.integer(ceiling(lngr/slng))                       # cover all obs lons #
 xlat <- as.integer(ceiling(latr/slat))                       # cover all obs lats #
 gridsq <- xlng*xlat                                      # number of grid squares #
@@ -342,15 +347,9 @@ for (ne in ix) {                                                 # loop for indi
                                                                                   #
     C0 <- f(Dn,n1,r1,s1)                    # variogram for dist between stations #
     diag(C0) <- 0                                           # zero along diagonal #
-#    write.csv(C,file=paste("C_",cnames[nm],".csv",sep=""))                       #
-##    k <- rbind(cbind(D > Dmax,FALSE),FALSE)                                     #
-##    Cinv[k] <- NA                                                               #
-#    Cinv[is.na(Cinv)] <- 0                                   # replace NA with 0 #
                                                                                   #
     F <- rbind(f(Dion,n1,r1,s1),rep(1,gridsq))     # variogram to dist to grid sq #
     F <- F[,sqs]                    # keep only grid sqs in our country or region #
-#    write.csv(F,file=paste("F_",cnames[nm],".csv",sep=""))                       #
-#    F[is.na(F)] <- 0                                         # replace NA with 0 #
 ###################################################################################
 
     fileg <- file.path(folder,folder2,paste("NCMP_",ele[ne],nyb:nye,cnames[nm],".csv",sep=""))
@@ -367,7 +366,6 @@ for (ne in ix) {                                                 # loop for indi
         iz <- match(ny,I1[,1])                                 # for correct year #
         if (!is.na(iz)) d[i] <- I1[iz,nm+1]             # copy if year is present #
       }                                                            # End stn loop #
-#      if (ny == nyb) write.csv(d,file=paste("d_",cnames[nm],".csv",sep=""))      #
                                                                                   #
 #    Vector of indices. Done!                                                     #
 ###################################################################################
