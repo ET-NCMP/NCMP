@@ -145,7 +145,7 @@ distance <- function (lat1,long1,lat2,long2) {  # arguments lat1,long1,lat2,long
   y2 <- long2*pi/180                                                              #
   d1 <- sin(x1)*sin(x2)                                                           #
   d2 <- cos(x1)*cos(x2)*cos(y1-y2)                                                #
-  acos(d1+d2)*6371.009 } # acos is arccos, 6371.009 (km) is WGS84 uniform sphere  # 
+  acos(pmin(pmax(d1+d2,-1.0),1.0))*6371.009 } # acos is arccos, 6371.009 (km) is WGS84 uniform sphere  # 
                                                                                   #
 #    Distance defined. Done!                                                      #
 ###################################################################################
