@@ -75,16 +75,14 @@ dir.create(dstr[4],showWarnings=FALSE)                                          
 
 ###################################################################################
 #    Reads the station list                                                       #
-                                                                                  #
-files <- read.table("P0_Station_List.txt",header=FALSE,stringsAsFactors=FALSE,    #
-    col.names=c("FileName","Lat","Long"))                                         #
-Station <- sub("\\.txt|$","",files[,"FileName"])       # Only strip ".txt" at end #
-if (nstn == 0L) nstn <- nrow(files) else nstn <- min(nrow(files),nstn)            #
+files <- read.table("A2_Indices/P2_Station_List.txt",header=TRUE,stringsAsFactors=FALSE)
+Station <- files[,"Station"]                                                      #
+nstn <- nrow(files)                                                               #
                                                                                   #
 #    Read station list. Done!                                                     #
 ###################################################################################
 
-# Construct elements for the16 indices to graph
+# Construct elements for the 16 indices to graph
 # file.path function will deal with the path separator
 
 ncmpn <- c(1L,2L,3L,6L,5L,4L,5L,4L,6L,6L,6L,6L,1L,2L,2L,2L)
@@ -151,7 +149,7 @@ for (i in 1:nstn) {         # 1:nstn
       y1 <- ymin[j]                                                               #
       y2 <- ymax[j]                                                               #
     } else {  # y1/2 not used for j > 12 (monthly T,Pr)                           #
-      y1 <- as.integer(min(tm[ref,'Annual'],na.rm=TRUE)))-3L                      #
+      y1 <- as.integer(min(tm[ref,'Annual'],na.rm=TRUE))-3L                      #
       y2 <- y1+25L  # is this a reasonable upper limit?                           #
     }                                                                             #
                                                                                   #
@@ -160,7 +158,7 @@ for (i in 1:nstn) {         # 1:nstn
            col="Blue",type="l",ylim=c(y1,y2),yaxs='i')                            #
     }                                                                             #
                                                                                   #
-    if (sum(!is.na(tm[ref,'Annual']))) > 10L) {       # check if have enough data #
+    if (sum(!is.na(tm[ref,'Annual'])) > 10L) {       # check if have enough data #
       q <- zyp.trend.vector(tm[ref,'Annual'],tm[ref,'Year'],method='zhang')       #
       trend[j] <- q['trendp']               # extract trend over period to vector #
       pval[j] <- q['sig']                             # extract p-value to vector #
@@ -221,7 +219,7 @@ coldown <- c("blue",rep("tan4",3),rep("blue",9),rep("tan4",3))                  
 Size <- function(x)                # input: trend, output: size with limit (TEST) #
   {pmin(trunc(abs(x)/multiple[i])+1,3)}                                           # 
                                                                                   #
-Type <- function(x) {             # input: trend, output: symbol triangle up/down #
+Type <- function(x)               # input: trend, output: symbol triangle up/down #
   {ifelse(x >= 0,24,25)}                                                          #
                                                                                   #
 Colour <- function(x,i)                      # input: trend, index, output colour #
