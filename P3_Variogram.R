@@ -79,15 +79,16 @@ inquiry <- function(ylo=1950L,yhi=2020L) {
       "It may require 30 minutes for one index for 100 stations.",
       "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
       "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
-      "For NCMP 3, Standardized Precipitation Index, enter 3.",
-      "For NCMP 4, Percentage of Warm Days, enter 4.",
-      "For NCMP 4, Percentage of Warm Nights, enter 5.",
-      "For NCMP 5, Percentage of Cold Days, enter 6.",
-      "For NCMP 5, Percentage of Cold Nights, enter 7.",sep="\n")
+      "For NCMP 2, Monthly Total Precipitation Anomaly, enter 3.",
+      "For NCMP 3, Standardized Precipitation Index, enter 4.",
+      "For NCMP 4, Percentage of Warm Days, enter 5.",
+      "For NCMP 4, Percentage of Warm Nights, enter 6.",
+      "For NCMP 5, Percentage of Cold Days, enter 7.",
+      "For NCMP 5, Percentage of Cold Nights, enter 8.",sep="\n")
 
   ne <- NA_integer_
-  while (is.na(ne) || ne < 0L || ne > 7L) {
-    ne <- readline("\nEnter the desired NCMP number (between 1 and 7, or 0 for all): ")
+  while (is.na(ne) || ne < 0L || ne > 8L) {
+    ne <- readline("\nEnter the desired NCMP number (between 1 and 8, or 0 for all): ")
     ne <- suppressWarnings(as.integer(ne))
   }
 
@@ -107,12 +108,12 @@ ne <- a[4]
 #    Creates directories for output files                                         #
 # Directories for input NCMP indices - using consistent approach                  #
 
-ncmpn <- c(1L,2L,3L,4L,4L,5L,5L)
+ncmpn <- c(1L,2L,2L,3L,4L,4L,5L,5L)
 folder <- "A2_Indices"
 folder2 <- paste("NCMP",ncmpn,sep="")
-folder3 <- c("Monthly_Mean_Temp_Anom","Monthly_Total_Prec_Anom_Norm",
+folder3 <- c("Monthly_Mean_Temp_Anom","Monthly_Total_Prec_Anom_Norm","Monthly_Total_Prec_Anom",
        "Standard_Prec_Index","Warm_Days","Warm_Nights","Cold_Days","Cold_Nights")
-ele <- c("TMA","PrAn","SPI","TX90p","TN90p","TX10p","TN10p") # NCMP index element
+ele <- c("TMA","PrAn","PrA","SPI","TX90p","TN90p","TX10p","TN10p") # NCMP index element
 dirs <- file.path(folder,folder2,folder3)                # Will add separator "/"
 
 folder <- "A3_Variogram"
@@ -189,7 +190,7 @@ cnames <- c(month.name,"Annual")
 
 # Reset loop index for doing all indices
 
-if (ne == 0L) ix <- 1:7 else ix <- ne
+if (ne == 0L) ix <- 1:8 else ix <- ne
 for (ne in ix) {                                                 # loop for indices
 
 # Constrain distances and define bins accordingly
@@ -228,28 +229,28 @@ for (ne in ix) {                                                 # loop for indi
 # Was storing all station pair differences anyway, so memory is not a factor      #
 # Now utilising data.table, supposed to be faster and more efficient              #
 # Start by setting up data.tables for each bin                                    #
-                                                                                  #
-  Idum <- as.data.table(I1)[0]                                 # dummy data.table #
-  Y <- vector("list",nbin)                                  # Empty list for bins #
-  for (i in 1:nbin) Y[[i]] <- Idum                # Empty data.table for each bin #
-                                                                                  #
-  cat("\t\t Calculating Differences",fill=TRUE)        # Write update in terminal #
-  yrs <- nyb:nye                                                # vector of years #
-  cxnames <- paste(cnames,"x",sep=".")                                            #
-  cynames <- paste(cnames,"y",sep=".")                                            #
-  for (i in 1:(nstn-1)) {                        # loop through pairs of stations #
-    I1 <- data.table(NCMP.stn[[i]],key="Year")                                    #
-    for (j in (i+1):nstn) {                                                       #
-      I12 <- merge(I1,NCMP.stn[[j]])              # Only retain overlapping years #
-      I12v <- I12[,.SD[is.element(Year,yrs)]]           # Cut to variogram period #
-      I12vd <- I12v[,cxnames,with=FALSE]-I12v[,cynames,with=FALSE]   # Difference #
-      names(I12vd) <- cnames                    # consistency with bin data.table #
-      Lij <- L[i,j]                                                               #
-      Y[[Lij]] <- rbind(Y[[Lij]],cbind(I12v[,.(Year)],I12vd))    # Add to bin Lij #
-    }                                                                # End j loop #
-    }                                                                # End i loop #
-  nrec <- sapply(Y,nrow)                          # Number of records in each bin #
-                                                                                  #
+
+  Idum <- as.data.table(I1)[0]                                 # dummy data.table
+  Y <- vector("list",nbin)                                  # Empty list for bins
+  for (i in 1:nbin) Y[[i]] <- Idum                # Empty data.table for each bin
+
+  cat("\t\t Calculating Differences",fill=TRUE)        # Write update in terminal
+  yrs <- nyb:nye                                                # vector of years
+  cxnames <- paste(cnames,"x",sep=".")
+  cynames <- paste(cnames,"y",sep=".")
+  for (i in 1:(nstn-1)) {                        # loop through pairs of stations
+    I1 <- data.table(NCMP.stn[[i]],key="Year")
+    for (j in (i+1):nstn) {
+      I12 <- merge(I1,NCMP.stn[[j]])              # Only retain overlapping years
+      I12v <- I12[,.SD[is.element(Year,yrs)]]           # Cut to variogram period
+      I12vd <- I12v[,cxnames,with=FALSE]-I12v[,cynames,with=FALSE]   # Difference
+      names(I12vd) <- cnames                    # consistency with bin data.table
+      Lij <- L[i,j]
+      Y[[Lij]] <- rbind(Y[[Lij]],cbind(I12v[,.(Year)],I12vd))    # Add to bin Lij
+    }                                                                # End j loop
+    }                                                                # End i loop
+  nrec <- sapply(Y,nrow)                          # Number of records in each bin 
+
 #    Finished calculating differences in indices. Done!                           #
 ###################################################################################
 
