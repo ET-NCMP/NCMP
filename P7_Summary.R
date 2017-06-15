@@ -13,38 +13,6 @@
 ###################################################################################
 
 ###################################################################################
-#    Gathers input info from the user                                             #
-                                                                                  #
-inquiry <- function() {                                                           #
-                                                                                  #
-  y1=0                                                                            #
-  while (is.na(y1) | y1<1950 | y1>2010) {                                         #
-    message("\n","Enter beginning year of the NCMPs ")                            #
-    message("(between 1950 and 2010, ex 1950): ")                                 #
-    y1 <- readline("")                                                            #
-    y1 <- ifelse(grepl("\\D",y1),0,as.integer(y1)) }                              #
-                                                                                  #
-  y2=0                                                                            #
-  while (is.na(y2) | y2<2000 | y2>2020) {                                         #
-    message("\n","Enter ending year tof the NCMPs ")                              #
-    message("(between 2000 and 2020, ex 2015): ")                                 #
-    y2 <- readline("")                                                            #
-    y2 <- ifelse(grepl("\\D",y2),0,as.integer(y2)) }                              #
-                                                                                  #
-  a=c(y1,y2)                                                                      #
-return(a)  }                                                                      #
-                                                                                  #
-#    User input collected. Done!                                                  #
-###################################################################################
-
-#if (interactive()) a=inquiry()
-a=c(1950,2015)
-nbeg=as.integer(a[1])
-nend=as.integer(a[2])
-nyrs=nend-nbeg+1
-#print(nyrs)
-
-###################################################################################
 #    Read and write the NCMPs time series in the same file                        #
 #                                                                                 #
 file1=read.table("A4_Region_Average/NCMP_TMA_Region_Avg.csv",header=T,sep=",")
@@ -88,16 +56,6 @@ names(data6)=c("Year","Month","TMA","PrAn","SPI","TX90p","TX10p","TN90p","TN10p"
 write.table(data6,file="A7_Summary/A1_Summary1.csv",sep=",",row.names=FALSE)
 #                                                                                 #
 #    Read and write the NCMPs time series: done!                                  #
-###################################################################################
-
-###################################################################################
-#    Read and write the resquested year and rank                                  #
-#                                                                                 #
-#data1=read.table("A5_Trends_Graphs/Rank_by_reg_1950_2015/NCMP_TMA.csv",header=T,sep=",")
-#odata1=subset(data1,data1[,1]==2015)
-#if (nrow(odata1)==1) write.table(odata1,file="A7_Summary/A1_Summary2.csv",sep=",",row.names=FALSE)
-#                                                                                 #
-#    Read and write the resquested year and rank:done!                            #
 ###################################################################################
 
 message("Done! \n")

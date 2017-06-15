@@ -159,7 +159,7 @@ distance <- function (lat1,long1,lat2,long2) {  # arguments lat1,long1,lat2,long
 # These are standard (but not all) kriging variogram functions                    #
                                                                                   #
 Gaussian <- function (x,n,r,s) {                        # parameters from program #
-  (s-n)*(1-exp(-(x)^2/(r^2)))+n }                                      # function #
+  (s-n)*(1-exp(-(x^2)/(r^2)))+n }                                      # function #
                                                                                   #
 Exponential <- function (x,n,r,s) {                     # parameters from program #
   (s-n)*(1-exp(-x/r))+n }                                              # function #
