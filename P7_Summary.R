@@ -15,27 +15,26 @@
 ###################################################################################
 #    Read and write the NCMPs time series in the same file                        #
 #                                                                                 #
+
 file1=read.table("A4_Region_Average/NCMP_TMA_Region_Avg.csv",header=T,sep=",")
 file1=file1[,1:3]    
 names(file1)=c("Year","Month","TMA")                                   
+
 file2=read.table("A4_Region_Average/NCMP_PrAn_Region_Avg.csv",header=T,sep=",")   
 file2=file2[,1:3]
 names(file2)=c("Year","Month","PrAn")                                      
+
 file3=read.table("A4_Region_Average/NCMP_SPI_Region_Avg.csv",header=T,sep=",")
 file3=file3[,1:3]    
 names(file3)=c("Year","Month","SPI")                                   
+
 file4=read.table("A4_Region_Average/NCMP_TX90p_Region_Avg.csv",header=T,sep=",")   
 file4=file4[,1:3]
 names(file4)=c("Year","Month","TX90p")                                      
-file5=read.table("A4_Region_Average/NCMP_TX10p_Region_Avg.csv",header=T,sep=",")
+
+file5=read.table("A4_Region_Average/NCMP_TN10p_Region_Avg.csv",header=T,sep=",")
 file5=file5[,1:3]    
-names(file5)=c("Year","Month","TX10p")                                   
-file6=read.table("A4_Region_Average/NCMP_TN90p_Region_Avg.csv",header=T,sep=",")   
-file6=file6[,1:3]
-names(file6)=c("Year","Month","TN90p")                                      
-file7=read.table("A4_Region_Average/NCMP_TN10p_Region_Avg.csv",header=T,sep=",")
-file7=file7[,1:3]    
-names(file7)=c("Year","Month","TN10p")                                   
+names(file5)=c("Year","Month","TN10p")                                   
 
 data1=merge(file1,file2,by=c(1,2))
 data1=data1[order(data1$Year,data1$Month),] 
@@ -45,15 +44,13 @@ data3=merge(data2,file4,by=c(1,2))
 data3=data3[order(data3$Year,data3$Month),] 
 data4=merge(data3,file5,by=c(1,2))
 data4=data4[order(data4$Year,data4$Month),] 
-data5=merge(data4,file6,by=c(1,2))
-data5=data5[order(data5$Year,data5$Month),] 
-data6=merge(data5,file7,by=c(1,2))
-data6=data6[order(data6$Year,data6$Month),] 
-data6=round(data6,2)
+
+data4=round(data4,3)
 
 dir.create("A7_Summary",showWarnings=FALSE)              
-names(data6)=c("Year","Month","TMA","PrAn","SPI","TX90p","TX10p","TN90p","TN10p")                            
-write.table(data6,file="A7_Summary/A1_Summary1.csv",sep=",",row.names=FALSE)
+names(data4)=c("Year","Month","TMA","PrAn","SPI","TX90p","TN10p")                            
+write.table(data4,file="A7_Summary/A1_Summary1.csv",sep=",",row.names=FALSE)
+
 #                                                                                 #
 #    Read and write the NCMPs time series: done!                                  #
 ###################################################################################
