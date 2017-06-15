@@ -77,7 +77,7 @@ tmax <- 55                    # threshold for high temperature (hard-wired, was 
 folder <- "A1_Quality_Control"                                                    #
 ele <- c("Pr_Outliers","TX_Outliers1","TX_Outliers2",                             #
          "TN_Outliers1","TN_Outliers2","TX_less_than_TN")                         #
-filet <- file.path(folder,paste("A1_",ele,".csv",sep=""))     # slightly modified #
+filet <- file.path(folder,paste("A1_",ele,".csv",sep=""))                         #
 dir.create(folder,showWarnings=FALSE)                                             #
                                                                                   #
 c1 <- c('"Station","Year","Mo","Day","Prec","PrLow","PrHigh","Error"',            #
@@ -150,7 +150,6 @@ n <- nrow(data1)                                                # number of date
 
 ###################################################################################
 #    Searching for outliers in Pr, Tx and Tn                                      #
-# Was not previously fully allowing for multiple errors on the same day           #
                                                                                   #
 Eflag <- matrix(FALSE,nrow=n,ncol=11)     # logical matrix for each outlier check #
 Eflag[,1] <- (data1[,.(Prec)] > pmax)     # Large prec                            #
@@ -222,12 +221,6 @@ if (any(ierr)) {                                                                
    data1[ierr,"Error"] <- "Max lower than Min"                                    #
    write.table(data1[ierr,.(Station,Year,Mo,Day,Tn,Tx,Error)],                    #
        file=filet[6],append=TRUE,sep=",",row.names=FALSE,col.names=FALSE) }       #
-                                                                                  #
-# All errors - not tested - only one Error per day, and many may be in data2      #
-#ierr <- apply(Eflag,1,any)                                                       #
-#if (any(ierr)) {                                                                 #
-#  write.csv(data1[ierr,.(Year,Mo,Day,Prec,Tx,Tn,Error)],                         #
-#      file=namex[i],row.names=FALSE) }                                           #
                                                                                   #
 #    Found and wrote all outliers. Done!                                          #
 ###################################################################################

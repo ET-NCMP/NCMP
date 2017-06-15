@@ -293,7 +293,6 @@ SPI <- cbind(Prec[,.(Year)],t(SPI))                                             
                                                                                   #
 write.csv(SPI,file=namex[7],row.names=FALSE,na="-99.9")                           #
                                                                                   #
-#message("\tSPI done")                                                            #
 #    Calculated and wrote the SPI. Done!                                          #
 ###################################################################################
 
@@ -335,15 +334,11 @@ for (ix in 8:11) { # loop over elements                                         
   write.csv(NCMP45,file=namex[ix],row.names=FALSE,na="-99.9")                     #
 } # End loop over indices                                                         #
                                                                                   #
-#message("\tPercentiles done")                                                    #
 #  Calculated and wrote percentage of warm/cold days/nights. Done!                #
 ###################################################################################
 
 ###################################################################################
 #    Calculate the Highest and Lowest Values Tx, Tn and RX1                       #
-                                                                                  #
-# Add columns with month/day and day/yr (not currently used - see old option 1)   #
-#data[,`:=`(dateMD=paste(Mo,Day,sep="/"),dateDY=paste(Day,Year,sep="/"))]         #
                                                                                   #
 # The maximum/mininum values can be extracted from climdex.pcic,                  #
 # but the day of the month would be harder                                        #
