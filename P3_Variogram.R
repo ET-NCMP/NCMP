@@ -27,6 +27,8 @@ if (packageVersion("data.table") < "1.9.6") {
 }
 suppressPackageStartupMessages(library(data.table))
 
+source("Support.R")
+
 ###################################################################################
 #    Gathers input info from the user                                             #
 # First hard-wire key parameters or limits for user input                         #
@@ -132,38 +134,6 @@ Station <- files[,"Station"]
 nstn <- nrow(files)
 
 #    Read station list. Done!
-###################################################################################
-
-###################################################################################
-#    Function to calulcate distance from lat and long                             #
-# Cosine Great Circle distance - could also use geosphere package (R >= 3.0.0)    #
- 
-distance <- function (lat1,long1,lat2,long2) {  # arguments lat1,long1,lat2,long2
-  x1 <- lat1*pi/180                                          # convert to radians
-  x2 <- lat2*pi/180
-  y1 <- long1*pi/180
-  y2 <- long2*pi/180
-  d1 <- sin(x1)*sin(x2)
-  d2 <- cos(x1)*cos(x2)*cos(y1-y2)
-  acos(pmin(pmax(d1+d2,-1.0),1.0))*6371.009 } # acos is arccos, 6371.009 (km) is WGS84 uniform sphere
-
-#    Distance defined. Done!
-###################################################################################
-
-###################################################################################
-#    Functions to fit variogram                                                   #
-# These are standard (but not all) kriging variogram functions                    #
-
-Gaussian <- function (x,n,r,s) {                        # parameters from program
-  (s-n)*(1-exp(-(x^2)/(r^2)))+n }                                      # function
-
-Exponential <- function (x,n,r,s) {                     # parameters from program
-  (s-n)*(1-exp(-x/r))+n }                                              # function
-
-Spherical <- function (x,n,r,s) {                       # parameters from program
-  ifelse(x<=r,(s-n)*(3*x/(2*r)-x^3/(2*r^3))+n,s) }                     # function
-
-#    Variogram functions defined. Done!
 ###################################################################################
 
 ###################################################################################
