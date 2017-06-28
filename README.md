@@ -4,7 +4,7 @@ National Climate Monitoring Products are simple summaries of the weather and cli
 
 ## Code Example
 
-Please read the documentation (R_NCMPs_User_Manual.docx)
+The code is written in R. Please read the documentation for further details (R_NCMPs_User_Manual.docx)
 
 ## Motivation
 
