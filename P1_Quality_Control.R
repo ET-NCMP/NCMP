@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P1_Quality_Control_Dec2016.R                                                 #
+#    P1_Quality_Control.R                                                         #
 #                                                                                 #
 #    This program does an elementary quality control on temp and prec data to     #
 #    look for outliers. Temperature outliers are qualified by the number of       #

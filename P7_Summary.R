@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P7_Summary_Dec2016.R                                                         #
+#    P7_Summary.R                                                                 #
 #                                                                                 #
 #    This program assembles the NCMPs to be sent to WMO.                          #
 #                                                                                 #

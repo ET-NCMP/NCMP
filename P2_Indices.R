@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P2_Indices_Dec2016.R                                                         #
+#    P2_Indices.R                                                                 #
 #                                                                                 #
 #    This program calculates 21 indices defined as the 6 NCMPs by ET-NCMP.        #
 #    For further details please refer to the User Manual.                         #
@@ -12,6 +12,9 @@
 #    December 2016                                                                #
 #    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
 #    February 2017 - Cleaned up, code is more "R-like"                            #
+#    Modified by John Kennedy, Met Office, UK                                     #
+#    June 2017 - removed commented out code                                       #
+#                                                                                 #
 #                                                                                 #
 ###################################################################################
 

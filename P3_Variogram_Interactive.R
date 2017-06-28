@@ -1,17 +1,16 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P3_Variogram_Dec2016.R                                                       #
+#    P3_Variogram_Interactive.R                                                   #
 #                                                                                 #
-#    This program calculates the variogram for 5 different indices.               #
+#    This program calculates the variogram for 6 different indices.               #
+#    This is the user interactive version which allows the user to specify        #
+#    a variable maximum distance                                                  #
 #    For further details please refer to the User Manual.                         #
 #                                                                                 #
 #    Programmers:                                                                 #
-#    Megan Hartwell, McMaster University, Canada                                  #
-#    Lucie Vincent, Environment and Climate Change Canada                         #
-#    December 2016                                                                #
-#    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
-#    February 2017 - Cleaned up, code is more "R-like"                            #
+#    John Kennedy, adpated from code written by Megan Hartwell,                   #
+#     Lucie Vincent and Simon Grainger                                            #
 #                                                                                 #
 ###################################################################################
 

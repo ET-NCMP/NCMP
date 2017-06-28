@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P6_Count_Records_Dec2016.R                                                   #
+#    P6_Count_Records.R                                                           #
 #                                                                                 #
 #    This program counts the number of records for 5 different indices.           #
 #    For further details please refer to the User Manual.                         #

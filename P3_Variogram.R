@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P3_Variogram_Dec2016.R                                                       #
+#    P3_Variogram.R                                                               #
 #                                                                                 #
 #    This program calculates the variogram for 5 different indices.               #
 #    For further details please refer to the User Manual.                         #
@@ -12,6 +12,10 @@
 #    December 2016                                                                #
 #    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
 #    February 2017 - Cleaned up, code is more "R-like"                            #
+#    Modified by John Kennedy, Met Office, UK                                     #
+#    June 2017 - overhauled to make some decisions more consistent and added      #
+#    precip anomaly as one of the variables that can be variogrammed. Moved       #
+#    function definitions to a support script                                     #
 #                                                                                 #
 ###################################################################################
 

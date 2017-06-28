@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P5_Trends_Graphs_Dec2016.R                                                   #
+#    P5_Trends_Graphs.R                                                           #
 #                                                                                 #
 #    This program reads the indices calculated previously and calculates the      #
 #    trend for the period specified by the user. It produces a map of each of     #

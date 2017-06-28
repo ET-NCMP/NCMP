@@ -1,7 +1,7 @@
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
-#    P4_Region_Average_Dec2016.R                                                  #
+#    P4_Region_Average.R                                                          #
 #                                                                                 #
 #    This program calculates the regional average of 7 different indices.         #
 #    For further details please refer to the User Manual.                         #
@@ -12,7 +12,8 @@
 #    December 2016                                                                #
 #    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
 #    February 2017 - Cleaned up, code is more "R-like"                            #
-#                                                                                 #
+#    Modified by John Kennedy, Met Office, UK                                     #
+#    June 2017 - move function defs to support sript, added precip anomaly        #
 ###################################################################################
 
 suppressPackageStartupMessages(library(maptools))
