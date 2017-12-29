@@ -21,13 +21,18 @@
 # The use of the data.table package imposes requirements on the version of
 # R and data.table - test for this and advise the user
 # If package data.table is missing, packageVersion() will generate an error and stop
+# Also check climdex.pcic, as the patches rely on the modern internal structure
+# Note that packages will automatically load their dependencies
+# - this is potentially an issue with data.table < 1.9.6 (needs reshape2)
 
 if (getRversion() < "3.0.0") {
   warning("R Version < 3.0.0 is not supported by this code - upgrade is recommended",call.=FALSE)
-  library(reshape2,warn.conflicts=FALSE)
 }
 if (packageVersion("data.table") < "1.9.6") {
   stop("Package 'data.table' Version >= 1.9.6 is required - upgrade is necessary",call.=FALSE)
+}
+if (packageVersion("climdex.pcic") < "1.0.3") {
+  stop("Package 'climdex.pcic' Version >= 1.0-3 is required - upgrade is necessary",call.=FALSE)
 }
 suppressPackageStartupMessages(library(data.table))
 library(climdex.pcic)
@@ -175,9 +180,12 @@ namex <- paste(dirs,"/",Sout[i],"_",ele,".csv",sep="")
 
 # Read station's data
 # Consider allowing CSV files - could then set missing to blank rather than fixed value
+# However, since the format of the data file is specified, can use additional arguments
+# to read.table to speed it up and reduce memory usage
 # Not good practice (but works) to use "data" as a variable name
 
-data <- read.table(file1[i],header=FALSE,na.strings="-99.9",
+data <- read.table(file1[i],header=FALSE,na.strings="-99.9",comment.char="",
+    colClasses=c("integer","integer","integer","numeric","numeric","numeric"),
     col.names=c("Year","Mo","Day","Prec","Tx","Tn"))
 
 ###################################################################################
@@ -206,7 +214,6 @@ Year <- data1[,.(                                                               
                                                                                   #
 # Shape monthly values into table by year                                         #
 # This now explictly uses data.table::dcast >= 1.9.6                              #
-# Has NOT been tested on data.table >= 1.10.0, or R > 3.2.2                       #
                                                                                   #
 Month.Y <- dcast(Month,Year~Mo,value.var=c("Pr","Tm"),sep=".",fill=NA)            #
 Month.Y <- merge(Month.Y,Year,by="Year")                                          #

@@ -11,11 +11,9 @@
 #    Lucie Vincent, Environment and Climate Change Canada                         #
 #    December 2016                                                                #
 #    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
-#    December 2016 - Cleaned up, code is more "R-like"                            #
+#    December 2017                                                                #
 #                                                                                 #
 ###################################################################################
-
-dir.create("A6_Count_Records",showWarnings=FALSE)          # create directories
 
 ###################################################################################
 #    Gathers input info from the user                                             #
@@ -35,14 +33,20 @@ inquiry <- function() {                                                         
     y1 <- suppressWarnings(as.integer(y1))                                        #
   }                                                                               #
                                                                                   #
+# Allow counting of records for a single year - might help with appending         #
   y2 <- 0L                                                                        #
-  while (is.na(y2) || y2 < 2000L || y2 > 2020L) {                                 #
-    cat("Enter ending year for counts of records ")                               #
-    y2 <- readline("\n(between 2000 and 2020, ex. 2015): ")                       #
+  y2l <- y1                                                                       #  
+  y2h <- as.POSIXlt(Sys.time())$year + 1899L                # last completed year #
+  yex <- max(y2l,min(2015L,y2h))                                                  #
+  mess <- paste("\n(between ",y2l," and ",y2h,",ex. ",yex,"): ",sep="")           #
+  while (is.na(y2) || y2 < y2l || y2 > y2h) {                                     #
+    cat("Enter ending year for counts of records")                                #
+    y2 <- readline(mess)                                                          #
     y2 <- suppressWarnings(as.integer(y2))                                        #
   }                                                                               #
                                                                                   #
-  c(x,y1,y2) }                                                                    #
+  c(x,y1,y2)                                                                      #
+}                                                                                 #
                                                                                   #
 #    User input collected. Done!                                                  #
 ###################################################################################
@@ -53,20 +57,22 @@ nstn <- a[1]
 nyb  <- a[2]
 nye <- a[3]
 nyrs <- nye-nyb+1L
+Yrc <- nyb:nye
+
+nthresh <- 30L  # number of years for valid station record
 
 ###################################################################################
 #    Reads the station list                                                       #
                                                                                   #
-files <- read.table("P0_Station_List.txt",header=FALSE,stringsAsFactors=FALSE,    #
-    col.names=c("FileName","Lat","Long"))                                         #
-Station <- sub("\\.txt|$","",files[,"FileName"])       # Only strip ".txt" at end #
+files <- read.table("A2_Indices/P2_Station_List.txt",header=TRUE,stringsAsFactors=FALSE)
+Station <- files[,"Station"]
 if (nstn == 0L) nstn <- nrow(files) else nstn <- min(nrow(files),nstn)            #
                                                                                   #
 #    Read station list. Done!                                                     #
 ###################################################################################
 
-# Have re-ordered to do record high extreme warm, and record low extreme cold
 # Name of input indices files
+# Re-ordered to do extreme minima followed by extreme maxima
 namex <- c("A2_Indices/NCMP6/Extreme_Cold_Day/",
            "A2_Indices/NCMP6/Extreme_Cold_Night/",
            "A2_Indices/NCMP6/Extreme_Warm_Day/",
@@ -76,48 +82,69 @@ namex <- c("A2_Indices/NCMP6/Extreme_Cold_Day/",
 # Element of indices to process
 ele <- c("TXn","TNn","TXx","TNx","RXday1")
 
-# data.frame for output file
-# Like the input station files, and unlike the NCMP2 indices, each row is a month
-# Output names have been slightly modified (#stns is stations with > 30 years at that time)
+# Output file names
+folder <- "A6_Count_Records"
+filec <- paste(folder,"/NCMP_",ele,"_Count_Rec.csv",sep="")
+dir.create(folder,showWarnings=FALSE)
 
-X <- data.frame(Year=rep(nyb:nye,each=13),Month=rep(1:13,times=nyrs),t(rep(0L,10)))
-names(X) <- c("Year","Month",
-              as.vector(t(sapply(c("#rec","#stns"), function(x) paste(ele,x,sep="-"))))
+# Dimension names - these are of type character
 
-for (ne in 1:5) {  # 1:5                                         # loop for indices
+cYrc <- as.character(Yrc)
+cnames <- c(month.name,"Annual")
+vnames <- c("Record count","Total stations") # not yet consistent with Regional Average files
+
+for (ne in seq_along(ele)) {  # Loop index based on length of elements
 
 ###################################################################################
 #    Read index data for all stations:                                            #
-# Utilise Year as first column as row names - helps with placing current station  #
-# within the full period but note that years are now character not integer        #
-# Define empty matrices for record and station counts                             #
+# These are formatted as year by row, with months + annual extreme,               #
+# with an extra row at the bottom for the station extreme value                   #
+# Utilise this format internally but write to same format as A4 Regional Average  #
+# Using the years for dimension names makes it easier to match periods            #
                                                                                   #
-  Irec <- matrix(0L,nrow=13L,ncol=nyrs,dimnames=list(nyb:nye,NULL))               #
-  Icount <- Irec                                          # copy empty data frame #
+  cat("Reading data for element",ele[ne],fill=TRUE)                               #
+  Icount <- array(0L,c(nyrs,13L,2L),list(Yrc,cnames,vnames))                      #
+                                                                                  #
   name1 <- paste(namex[ne],Station,"_",ele[ne],".csv",sep="")    # all file names #
-                                                                                  #
-  cat("Reading data for index",ne,fill=TRUE)                                      #
-  for (i in 1:nstn) { # 1:nstn                                                    #
-    cat(i,"\t",Station[i],fill=TRUE)                                              #
+  for (i in 1:nstn) {                                                  # Stn loop #
+#    cat(i,"\t",Station[i],fill=TRUE)                                             #
     I1 <- read.csv(name1[i],header=TRUE,stringsAsFactors=FALSE,na.strings="-99.9",#
                    row.names=1)                                    # read in data #
     I1 <- I1[-nrow(I1),]                                      # remove bottom row #
                                                                                   #
-# There is no assumption that the station years are contiguous - allow for this   #
-# Skip station if not enough valid years, allowing for different cases            #
+# The extremes indices estimatation by climdex.pcic will remove years where       #
+# no monthly values can be calculated. This contrasts with other manipulations    #
+# of data.table where missing data is padded out by NA                            #
+# The preferred solution is to ensure that P2_Indices.R pads out missing years    #
+# with NA - regardless of the source. More work is required to achieve that       #
+# For now, skip if less than 30 years, and warn if first 30 years is incomplete   #
+# And have to allow for those missing years                                       #
                                                                                   #
-    Yr <- as.integer(rownames(I1))                                # years of data #
+    nyr <- nrow(I1)                                                               #
+    if (nyr < nthresh) {                                                          #
+      cat("Less than",nthresh,"years at",Station[i],"- skipping",fill=TRUE)       #
+      next                                                                        #
+    }                                                                             #
+                                                                                  #
+    cYr <- rownames(I1)                     # years of data - as "character" type #
+    Yr <- as.integer(cYr)                                                         #
     y1 <- Yr[1]                                              # First year of data #
-# Option 1: 30 years from beginning of data                                       #
-    ic <- (Yr-y1 >= 30L)                                                          #
-# Option 2: 30 years from start year                                              #
-#    ic <- (Yr-nyb >= 30L)                                                        #
-    if (nrow(I1) <= 30L || !any(ic) || !any(is.element(Yr[ic],nyb:nye))) next     #
+    y2 <- y1+nthresh-1L                             # last year of initial period #
+    Irs <- which(is.element(Yr,y1:y2))                  # Indices of start period #
+    if (length(Irs) < nthresh) {                                                  #
+       cat("Less than",nthresh,"contiguous years at start of",Station[i],fill=TRUE)
+    }                                                                             #
+                                                                                  #
+# Which station years are in the reporting period?                                #
+# Consequently, increment counter for stations reporting - logical F/T to integer 0/1
+                                                                                  #
+    Ir <- is.element(Yr,Yrc)                                                      #
+    Icount[cYr[Ir],,2] <- Icount[cYr[Ir],,2] + !is.na(I1[Ir,])                    #
                                                                                   #
 # Find accumulation of record min/max depending on the NCMP index                 #
 # cummin/max requires NA to be reset to +/-Inf to work as intended                #
 # Having done this, can extract the year of the record by the index of the        #
-# run length of each record                                                       # 
+# run length of each record                                                       #
                                                                                   #
     if (ne <= 2L) {                                                               #
       I1[is.na(I1)] <- +Inf                                                       #
@@ -127,36 +154,38 @@ for (ne in 1:5) {  # 1:5                                         # loop for indi
       Ival <- sapply(I1,cummax)                                                   #
     }                                                                             #
     Irl <- apply(Ival,2,function(x) cumsum(c(1L,rle(x)$lengths)))                 #
-    ilen <- sapply(Irl,length)-1L      # number of times record set in each month #
                                                                                   #
-# Convert the list of indices to matrix of when records were set,                 #
-# and valid index values to a station count (when > 30 years and not missing)     #
+# Drop all records except the most extreme (the last occurance) in the first 30 years
+# and the last "record" - this occurs from the need to extend the series by one   #
+# Increment the counter of any remaining years of record by one                   #
                                                                                   #
-    Srec <- array(0L,dim(I1),dimnames(I1))                                        #
-    for (j in 1:13) {                                            # for each month #
-      indx <- Irl[[j]][1:ilen[j]]                # index of when records were set #
-      Srec[indx,j] <- ifelse(ic[indx],1L,0L)    # record if > 30 years from start #
-    }                                                                             #
-    Scount <- array(0L,dim(I1),dimnames(I1))                                      #
-    Scount[ic,] <- sapply(I1[ic,],function(x) ifelse(is.finite(x),1L,0L))         #
-                                                                                  #
-# Add station counts to total counts for this NCMP index                          #
-                                                                                  #
-    cyr <- rownames(I1)                                       # year as character #
-    indx <- is.element(Yr,nyb:nye)                   # Station years within range #
-    Irec[cyr[indx],] <- Irec[cyr[indx],]+Srec[cyr[indx],]     # reference by year #
-    Icount[cyr[indx],] <- Icount[cyr[indx],]+Scount[cyr[indx,]]                   #
+    ilen <- sapply(Irl,length)-1L                                                 #
+    for (j in 1:13) {                                                # month loop #
+      Irec <- Irl[[j]][1:ilen[j]]                # drops the spurious last record #
+      imax <- max(which(Yr[Irec] <= y2))          # last record in initial period #
+      cRec <- cYr[Irec[imax:ilen[j]]]                                             #
+      ind <- which(is.element(cRec,cYrc))                                         #
+      if (length(ind) > 0L) Icount[cRec[ind],j,1] <- Icount[cRec[ind],j,1] + 1L   #
+    }                                                            # End month loop #
   }                                                                # End stn loop #
                                                                                   #
-# Copy counts for this index to output data.frame                                 #
-                                                                                  #
-  X[,2*i+1] <- as.vector(t(Irec))                                                 #
-  X[,2*i+2] <- as.vector(t(Icount))                                               #
+###################################################################################
+#    Write record counts                                                          #
+# Use a format similar to the Regional Average files                              #
+# This requires permuting the internal counter array                              #
+#                                                                                 #
+  cat("\t Writing results",fill=TRUE)                  # Write update in terminal #
+  Icount1 <- matrix(aperm(Icount,c(2,1,3)),nyrs*13L,2L)                           #
+  X <- data.frame(Year=rep(Yrc,each=13),Month=rep(1:13,times=nyrs),Icount1)       #
+  names(X)[3:4] <- vnames                                                         #
+  write.csv(X,file=filec[ne],row.names=FALSE)                                     #
                                                                                   #
 #    Finished counting station records. Done!                                     #
 ###################################################################################
 
 } # End index loop 
 
-write.csv(X,file="A6_Count_Records/Records.csv",row.names=FALSE)
+dy <- date()
+mess <- paste("These Record Counts are calculated using the period",nyb,"to",nye,"on date",dy)
+writeLines(mess,file.path(folder,"Count_Rec_period.txt"))
 cat("Finished counting record stations!",fill=TRUE)

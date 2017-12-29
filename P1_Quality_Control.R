@@ -1,3 +1,4 @@
+
 ###################################################################################
 #                                                                                 #
 #    The R-NCMPs package has been developed by the ET-NCMP.                       #
@@ -118,9 +119,12 @@ cat(i,"\t",Station[i],fill=TRUE)  # text to stdout: i=1, Station name, separate 
 
 # Read station's data
 # Consider allowing CSV files - could then set missing to blank rather than fixed value
+# However, since the format of the data file is specified, can use additional arguments
+# to read.table to speed it up and reduce memory usage
 # Not good practice (but works) to use "data" as a variable name
 
-data <- read.table(file1[i],header=FALSE,na.strings="-99.9",
+data <- read.table(file1[i],header=FALSE,na.strings="-99.9",comment.char="",
+    colClasses=c("integer","integer","integer","numeric","numeric","numeric"),
     col.names=c("Year","Mo","Day","Prec","Tx","Tn"))
 
 ###################################################################################
