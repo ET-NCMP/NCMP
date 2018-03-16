@@ -6,9 +6,10 @@
 #                                                                                 #
 #    This program does an elementary quality control on temp and prec data to     #
 #    look for outliers. Temperature outliers are qualified by the number of       #
-#    standard deviations from the mean or if the maximum is less than the         #
-#    minimum. Prec outliers are qualified by their value exceeding a set level    #
-#    or being negative. For further details please refer to the User Manual.      # 
+#    standard deviations from the mean; if the maximum is less than the           #
+#    minimum; if temp is outside the user defined limits. Prec outliers are       #
+#    qualified by their value exceeding a set level or being negative.            #
+#    For further details please refer to the User Manual.                         # 
 #                                                                                 #
 #    Programmers:                                                                 #
 #    Megan Hartwell, McMaster University, Canada                                  #
@@ -39,36 +40,62 @@ inquiry <- function() {                   # start function, defined before calle
                                                                                   #
   x <- NA_real_                                                                   #
   while (is.na(x) || x < 0 || x > 200) {      # is x numeric and >= 1 and <= 200? #
-    x <- readline("\nEnter the number of stations (between 1 and 200, or 0 for all): ")
+    x <- readline("\nEnter the number of stations to be used (between 1 and 200, or 0 for all): ")
     x <- suppressWarnings(as.numeric(x)) }                                        #
 # Allow for numeric rather than integer values - this requires a decimal point    #
 # and the easiest way is to do the conversion and suppress the warning            #
                                                                                   #
+  uptx <- NA_real_                                                                #
+  while (is.na(uptx) || uptx < -65 || uptx > 50) {                                #
+    cat("Enter value (Celsius) to identify upper limit for maximum temperature")  #
+    uptx <- readline("\n(between -65 and 50, example 40): ")                      #
+    uptx <- suppressWarnings(as.numeric(uptx)) }                                  #
+                                                                                  #
+  lotx <- NA_real_                                                                #
+  while (is.na(lotx) || lotx < -65 || lotx > 50) {                                #
+    cat("Enter value (Celsius) to identify lower limit for maximum temperature")  #
+    lotx <- readline("\n(between -65 and 50, example -30): ")                     #
+    lotx <- suppressWarnings(as.numeric(lotx)) }                                  #
+                                                                                  #
+  uptn <- NA_real_                                                                #
+  while (is.na(uptn) || uptn < -65 || uptn > 50) {                                #
+    cat("Enter value (Celsius) to identify upper limit for minimum temperature")  #
+    uptn <- readline("\n(between -65 and 50, example 25): ")                      #
+    uptn <- suppressWarnings(as.numeric(uptn)) }                                  #
+                                                                                  #
+  lotn <- NA_real_                                                                #
+  while (is.na(lotn) || lotn < -65 || lotn > 50) {                                #
+    cat("Enter value (Celsius) to identify lower limit for minimum temperature")  #
+    lotn <- readline("\n(between -65 and 50, example -55): ")                     #
+    lotn <- suppressWarnings(as.numeric(lotn)) }                                  #
+                                                                                  #
   pr <- -1                                                                        #
   while (is.na(pr) || pr < 100 || pr > 500) {   # is 500 mm a reasonable extreme? #
     cat("Enter value (mm) to identify daily precipitation outlier")               #
-    pr <- readline("\n(between 100 and 500, ex. 300): ")                          #
+    pr <- readline("\n(between 100 and 500, example 300): ")                      #
     pr <- suppressWarnings(as.numeric(pr)) }                                      #
                                                                                   #
   ts <- 0                                                                         #
   while (is.na(ts) || ts < 3 || ts > 7) {                                         #
     cat("Enter number of standard deviations to identify daily")                  #
-    ts <- readline("\ntemperature outlier (between 3 and 7, ex. 5): ")            #
+    ts <- readline("\ntemperature outlier (between 3 and 7, example 6): ")        #
     ts <- suppressWarnings(as.numeric(ts)) }                                      #
                                                                                   #
-  c(x,pr,ts) } # combine variables                                                #
+  c(x,uptx,lotx,uptn,lotn,pr,ts) } # combine variables                            #
 # Do not need explicit return at the end of a function                            #
                                                                                   #
 #    User input collected. Done!                                                  #
 ###################################################################################
 
 if (interactive()) a <- inquiry()        # ask if interactive call function inquiry
-#a <- c(112,500,5)
+#a <- c(112,40,-10,20,-30,500,5)                                  # use for testing
 nstn <- as.integer(a[1])                        # truncates after any decimal point
-pmax <- a[2]
-tsd <- a[3]
-tmin <- -65                            # threshold for low temperature (hard-wired)
-tmax <- 55                    # threshold for high temperature (hard-wired, was 50)
+txup <- a[2]
+txlo <- a[3]
+tnup <- a[4]
+tnlo <- a[5]
+pmax <- a[6]
+tsd  <- a[7]
 
 ###################################################################################
 #    Create directory for output files and write header                           #
@@ -158,10 +185,10 @@ n <- nrow(data1)                                                # number of date
 Eflag <- matrix(FALSE,nrow=n,ncol=11)     # logical matrix for each outlier check #
 Eflag[,1] <- (data1[,.(Prec)] > pmax)     # Large prec                            #
 Eflag[,2] <- (data1[,.(Prec)] < 0)        # negative prec                         #
-Eflag[,3] <- (data1[,.(Tx)] > tmax)       # Tmax > absolute high threshold        #
-Eflag[,4] <- (data1[,.(Tx)] < tmin)       # Tmax < absolute low threshold         #
-Eflag[,5] <- (data1[,.(Tn)] > tmax)       # Tmin > absolute high threshold        #
-Eflag[,6] <- (data1[,.(Tn)] < tmin)       # Tmin < absolute low threshold         #
+Eflag[,3] <- (data1[,.(Tx)] > txup)       # Tmax > absolute high threshold        #
+Eflag[,4] <- (data1[,.(Tx)] < txlo)       # Tmax < absolute low threshold         #
+Eflag[,5] <- (data1[,.(Tn)] > tnup)       # Tmin > absolute high threshold        #
+Eflag[,6] <- (data1[,.(Tn)] < tnlo)       # Tmin < absolute low threshold         #
 Eflag[,7] <- (data1[,.(Tx)] > data1[,.(TxMax)]) # Tmax > SD high threshold        #
 Eflag[,8] <- (data1[,.(Tx)] < data1[,.(TxMin)]) # Tmax < SD low threshold         #
 Eflag[,9] <- (data1[,.(Tn)] > data1[,.(TnMax)]) # Tmin > SD high threshold        #
@@ -184,9 +211,9 @@ if (any(ierr)) {                                                                
                                                                                   #
 ierr <- (Eflag[,3] | Eflag[,4])                                                   #
 if (any(ierr)) {                                                                  #
-   data2 <- cbind(data1,TMin=tmin,TMax=tmax)                                      #
-   if (any(Eflag[,3])) data2[Eflag[,3],"Error"] <- paste("Max temp above",tmax,"C")
-   if (any(Eflag[,4])) data2[Eflag[,4],"Error"] <- paste("Max temp below",tmin,"C")
+   data2 <- cbind(data1,TMin=txlo,TMax=txup)                                      #
+   if (any(Eflag[,3])) data2[Eflag[,3],"Error"] <- paste("Max temp above",txup,"C")
+   if (any(Eflag[,4])) data2[Eflag[,4],"Error"] <- paste("Max temp below",txlo,"C")
    write.table(data2[ierr,.(Station,Year,Mo,Day,Tx,TMin,TMax,Error)],             #
        file=filet[2],append=TRUE,sep=",",row.names=FALSE,col.names=FALSE) }       #
                                                                                   #
@@ -203,9 +230,9 @@ if (any(ierr)) {                                                                
                                                                                   #
 ierr <- (Eflag[,5] | Eflag[,6])                                                   #
 if (any(ierr)) {                                                                  #
-   data2 <- cbind(data1,TMin=tmin,TMax=tmax)                                      #
-   if (any(Eflag[,5])) data2[Eflag[,5],"Error"] <- paste("Min temp above",tmax,"C")
-   if (any(Eflag[,6])) data2[Eflag[,6],"Error"] <- paste("Min temp below",tmin,"C")
+   data2 <- cbind(data1,TMin=tnlo,TMax=tnup)                                      #
+   if (any(Eflag[,5])) data2[Eflag[,5],"Error"] <- paste("Min temp above",tnup,"C")
+   if (any(Eflag[,6])) data2[Eflag[,6],"Error"] <- paste("Min temp below",tnlo,"C")
    write.table(data2[ierr,.(Station,Year,Mo,Day,Tn,TMin,TMax,Error)],             #
        file=filet[4],append=TRUE,sep=",",row.names=FALSE,col.names=FALSE) }       #
                                                                                   #

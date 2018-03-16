@@ -14,154 +14,206 @@
 #    February 2017 - Cleaned up, code is more "R-like"                            #
 #    Modified by John Kennedy, Met Office, UK                                     #
 #    June 2017 - removed commented out code                                       #
-#                                                                                 #
+#    Modified by Simon Grainger, Bureau of Meteorology, Australia                 #
+#    March 2018 - Improved handling of missing values, zero climatological rain   #
 #                                                                                 #
 ###################################################################################
 
-# The use of the data.table package imposes requirements on the version of
-# R and data.table - test for this and advise the user
-# If package data.table is missing, packageVersion() will generate an error and stop
-# Also check climdex.pcic, as the patches rely on the modern internal structure
-# Note that packages will automatically load their dependencies
-# - this is potentially an issue with data.table < 1.9.6 (needs reshape2)
+# Primary check for version of R and key package dependencies
+# A re-check of the dependencies indicates that R-NCMP will not work in versions
+# of R earlier than 3.0.0. It *should* work for all subsequent versions, but has
+# has only been properly tested for R >= 3.2.2
+# Also trying to improve diagnostic messages for testing the key dependencies
+# 'data.table' and 'climdex.pcic' - this uses find.package() available in >= R 2.13.0
+# The existence of package dependencies is implied by these tests
+# This should be done as a preliminary script
 
-if (getRversion() < "3.0.0") {
-  warning("R Version < 3.0.0 is not supported by this code - upgrade is recommended",call.=FALSE)
+cat("***** P2_Indices.R *****",fill=TRUE)
+xx <- getRversion()
+if (xx < "3.0.0") {
+  stop("R Version < 3.0.0 cannot execute this code - upgrade is required",call.=FALSE)
+} else if (xx >= "3.0.0" && xx < "3.2.2") {
+  cat("R Version",xx,"should work with this code but is untested - upgraded is suggested",fill=TRUE)
 }
-if (packageVersion("data.table") < "1.9.6") {
-  stop("Package 'data.table' Version >= 1.9.6 is required - upgrade is necessary",call.=FALSE)
+xx <- find.package("data.table",quiet=TRUE)
+if (length(xx) == 0L) {
+  stop("Package 'data.table' is not installed - require Version >= 1.9.6",call.=FALSE)
+} else if (packageVersion("data.table") < "1.9.6") {
+  stop("Package 'data.table' Version >= 1.9.6 is required - upgrade is required",call.=FALSE)
 }
-if (packageVersion("climdex.pcic") < "1.0.3") {
-  stop("Package 'climdex.pcic' Version >= 1.0-3 is required - upgrade is necessary",call.=FALSE)
+xx <- find.package("climdex.pcic",quiet=TRUE)
+if (length(xx) == 0L) {
+  stop("Package 'climdex.pcic' is not installed - require Version >= 1.0-3",call.=FALSE)
+} else if (packageVersion("climdex.pcic") < "1.0.3") {
+  stop("Package 'climdex.pcic' Version >= 1.0-3 is required - upgrade is required",call.=FALSE)
 }
+
+# Can now safely load the data.table and climdex.pcic packages (and their dependencies)
+# Suppress warning messages
+# - these should be related to the version of R used to build the package on PC, and can be ignored
+
+op <- options(warn=-1)
 suppressPackageStartupMessages(library(data.table))
 library(climdex.pcic)
+source("Support_Indices.R")
+cat("Successfully loaded packages",fill=TRUE)
 
-source("P2_Indices_extra.R")
+###################################################################################
+# Set variables with key thresholds for climatological reference period           #
+# and for the number of missing days within a month and a year                    #
+# These are values which have been determined by the ET-NCMP for the purposes of  #
+# generating NCMPs and may differ from other standards or guidlines               #
+# ***** DO NOT CHANGE THE VALUE OF THESE VARIABLES *****                          #
+###################################################################################
+
+stnhi <- 200L  # maximum number of stations
+yrlo <- 1900L  # earliest possible year for reference period
+yrhi <- as.POSIXlt(Sys.time())$year + 1899L # latest possible year == current - 1
+yclo <- 1981L  # recommended start year for climatological period (WMO-1201, 2017)
+ychi <- 2010L  # recommended end year for climatological period (WMO-1201, 2017)
+cthresh <- 20L # number of years required for calculating a valid climatology
+missm <- 10L   # No. of missing days allowable for valid month (WMO-1201, 2017)
+missa <- 36L   # No. of missing days allowable for valid year (no standard)
 
 ###################################################################################
 #    Gathers input info from the user                                             #
-# First hard-wire key parameters or limits for user input                         #
-# This allows user to easily change parameters for their own purposes             #
-# - it is impossible to guarantee that NCMP output will be consistent across NMHS #
-# The previous values for missing data are typical for extremes indices, possibly #
-# where have long duration and counts                                             #
-# However, this seems too strict, and the WMO 2009 recommendations for climate    #
-# normals, plus a looser threshold for missing days in annual, seems much more    #
-# reasonable for the indices calculated here                                      #
-# However, rainfall should notionally have a zero days threshold, or certainty    #
-# that the missing data are accumulated - cannot know the latter here             #
-# The low climatology percentage is helpful for ACORN-SAT (should be 50%)         #
-# and is suggested by WMO 1989 allowing decadal means as provisional              #
-# CRUTem also estimates climate normals for << 30 years of data                   #
-# The WMO 2009 standard is 80% valid years for a 30 year period                   #
-# Apply start/end of decades to the hard-wired limits                             #
-                                                                                  #
-stnhi <- 200L                                        # maximum number of stations #
-yrlo <- 1900L                       # earliest possible year for reference period #
-yrhi <- as.POSIXlt(Sys.time())$year + 1899L # latest possible year == current - 1 #
-                                                                                  #
-cper <- 33L                          # Percentage of years valid for climatology  #
-missm <- 10L   # No. of missing days allowable for valid month (WMO 2009) (was 6) #
-missa <- 36L   # No. of missing days in year (was 18 == 5%, no apparent standard) #
-                                                                                  #
-inquiry <- function(stnhi=200L,yrlo=1961L,yrhi=2020L) {                           #
-                                                                                  #
-  mess <- paste("\nEnter the number of stations (between 1 and ",stnhi,", or 0 for all): ",sep="")
-  x <- NA_integer_                                                                #
-  while (is.na(x) || x < 0L || x > stnhi) {                                       #
-    x <- readline(mess)                                                           #
-    x <- suppressWarnings(as.integer(x))                                          #
-  }                                                                               #
-                                                                                  #
-  cat("The WMO and NCMP Expert Team recommends a base period of 1981-2010.",fill=TRUE)
-                                                                                  #
-  y1l <- yrlo %/% 10L * 10L + 1L                                                  #
-  y2h <- yrhi %/% 10L * 10L                                                       #
-  mess <- paste("\n(between",y1l,"and",y2h-9L,"ex. 1981): ")                      #
-  y1 <- 0L                                                                        #
-  while (is.na(y1) || y1 < y1l || y1 > y2h-9L) {                                  #
-    cat("Enter beginning year for base period")                                   #
-    y1 <- readline(mess)                                                          #
-    y1 <- suppressWarnings(as.integer(y1))                                        #
-  }                                                                               #
-                                                                                  #
-  mess <- paste("\n(between",y1l+9L,"and",y2h,"ex. 2010): ")                      #
-  y2 <- 0L                                                                        #
-  while (is.na(y2) || y2 < y1l+9L || y2 > y2h || y2 < y1) {                       #
-    cat("Enter ending year for base period")                                      #
-    y2 <- readline(mess)                                                          #
-    y2 <- suppressWarnings(as.integer(y2))                                        #
-  }                                                                               #
-                                                                                  #
-  c(x,y1,y2)                                                                      #
-}                                                                                 #
-                                                                                  #
-# Get the user input and set to local variables                                   #
-if (interactive()) a <- inquiry(stnhi,yrlo,yrhi)                                  #
-#a <- c(0L,1961L,1990L)                                                           #
-nstn <- a[1]                                                                      #
-nybr <- a[2]                                                                      #
-nyer <- a[3]                                                                      #
-                                                                                  #
-cthresh <- (cper*(nyer-nybr+1L)) %/% 100L      # no. of valid years for climatol. #
-max.miss <- c(monthly=missm,annual=missa)                  # for climdexInput.raw #
-                                                                                  #
-#    User input collected. Done!                                                  #
+# Use this to generate a configuration file for later use, notably P7             #
+# For clarity, no longer do this as a separate function                           #
 ###################################################################################
+
+cat("Generate NCMP monthly and annual station indices from daily data",fill=TRUE)
+
+# Number of stations to process
+# Still suppressing warning messages - about converting strings to integer
+
+cat("Processes either all stations in 'P0_Station_List.txt', or the first 'n' stations",
+    "\nIn both cases a maximum of",stnhi,"stations will be processed") 
+mess <- paste("\nEnter the number of stations (between 1 and ",stnhi,", or 0 for all) : ",sep="")
+nstn <- NA_integer_
+while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
+  nstn <- readline(mess)
+  nstn <- as.integer(nstn)
+}
+
+# Obtain quality control flags for temperature and rainfall data for Summary
+# The single 0/1/2 differs slightly from that defined in the Guidance Annex
+
+cat("Input data quality control level value:","0 = No Quality Control",
+    "1 = Quality Control","2 = Quality Control plus homogenisation",sep="\n")
+mess <- "\nEnter Quality Control level value for station daily temperature : "
+QCT <- NA_integer_
+while (is.na(QCT) || QCT < 0L || QCT > 2L) {
+  QCT <- readline(mess)
+  QCT <- as.integer(QCT)
+}
+
+mess <- "\nEnter Quality Control level value for station daily precipitation : "
+QCPr <- NA_integer_
+while (is.na(QCPr) || QCPr < 0L || QCPr > 2L) {
+  QCPr <- readline(mess)
+  QCPr <- as.integer(QCPr)
+}
+		
+# Generate limits for climatological period, and enforce the mininmum length
+# This checking should not be generating contradictory messages
+
+cat("The WMO and ET-NCMP recommends a climatological period of",yclo,"-",ychi,fill=TRUE)
+yr1 <- yrlo
+yr2 <- yrhi - cthresh + 1L
+nybr <- 0L
+mess <- paste("\nbetween",yr1,"and",yr2,"- recommended =",yclo,": ")
+while (is.na(nybr) || nybr < yr1 || nybr > yr2) {
+  cat("Enter beginning year for climatological period")
+  nybr <- readline(mess)
+  nybr <- as.integer(nybr)
+}
+
+yr1 <- nybr + cthresh - 1L
+yr2 <- yrhi
+nyer <- 0L
+mess <- paste("\nbetween",yr1,"and",yr2,"- recommended =",ychi,": ")
+while (is.na(nyer) || nyer < yr1 || nyer > yr2) {
+  cat("Enter ending year for climatological period")
+  nyer <- readline(mess)
+  nyer <- as.integer(nyer)
+}
+cat("User input collected",fill=TRUE)
+
+# Turn warnings back on, but print immediately
+options(warn=1)
 
 ###################################################################################
 #    Creates directories for output files                                         #
 # Rather than do this with individual variable names, use vectors to show how     #
 # a consistent approach is taken to structure and naming conventions              #
-                                                                                  #
-ncmpn <- c(1L,1L,2L,2L,2L,2L,3L,4L,4L,5L,5L,6L,6L,6L,6L,6L,6L,6L,6L,6L,6L)        #
-folder <- "A2_Indices"                                                            #
-folder2 <- paste("NCMP",ncmpn,sep="")                                             #
-folder3 <- c("Monthly_Mean_Temp","Monthly_Mean_Temp_Anom",                        #
-             "Monthly_Total_Prec_Anom","Monthly_Total_Prec_Anom_Norm",            #
-             "Monthly_Total_Prec","Monthly_Total_Prec_Ratio","Standard_Prec_Index",
-             "Warm_Days","Warm_Nights","Cold_Days","Cold_Nights",                 #
-             "Extreme_Prec_Date","Extreme_Prec",                                  #
-             "Extreme_Warm_Day_Date","Extreme_Warm_Day",                          #
-             "Extreme_Warm_Night_Date","Extreme_Warm_Night",                      #
-             "Extreme_Cold_Day_Date","Extreme_Cold_Day",                          #
-             "Extreme_Cold_Night_Date","Extreme_Cold_Night")                      #
-ele <- c("TM","TMA","PrA","PrAn","Pr","PrR","SPI",                                #
-         "TX90p","TN90p","TX10p","TN10p","RXday1_date","RXday1",                  #
-	   "TXx_date","TXx","TNx_date","TNx","TXn_date","TXn","TNn_date","TNn")     #
-dirs <- file.path(folder,folder2,folder3)                # Will add separator "/" #
-for (dname in dirs) dir.create(dname,showWarnings=FALSE,recursive=TRUE)           #
-                                                                                  #
-#    Directories created. Done!                                                   #
 ###################################################################################
+
+ncmpn <- c(1L,1L,2L,2L,2L,2L,3L,4L,4L,5L,5L,6L,6L,6L,6L,6L,6L,6L,6L,6L,6L)
+folder <- "A2_Indices"
+folder2 <- paste("NCMP",ncmpn,sep="")
+folder3 <- c("Monthly_Mean_Temp","Monthly_Mean_Temp_Anom",
+             "Monthly_Total_Prec_Anom","Monthly_Total_Prec_Anom_Norm",
+             "Monthly_Total_Prec","Monthly_Total_Prec_Ratio","Standard_Prec_Index",
+             "Warm_Days","Warm_Nights","Cold_Days","Cold_Nights",
+             "Extreme_Prec_Date","Extreme_Prec",
+             "Extreme_Warm_Day_Date","Extreme_Warm_Day",
+             "Extreme_Warm_Night_Date","Extreme_Warm_Night",
+             "Extreme_Cold_Day_Date","Extreme_Cold_Day",
+             "Extreme_Cold_Night_Date","Extreme_Cold_Night")
+ele <- c("TM","TMA","PrA","PrAn","Pr","PrR","SPI",
+         "TX90p","TN90p","TX10p","TN10p","RXday1_date","RXday1",
+	     "TXx_date","TXx","TNx_date","TNx","TXn_date","TXn","TNn_date","TNn")
+
+dirs <- file.path(folder,folder2,folder3)  # adds separator "/"
+for (dname in dirs) dir.create(dname,showWarnings=FALSE,recursive=TRUE)                                                                             #
+cat("Directories successfully created",fill=TRUE)                                                                              #
 
 ###################################################################################
 #    Reads the station list                                                       #
 # Can set everything up in a data.frame (!= array) in one call to read.table      #
 # Rather than insisting that Station names be 23 character with "_" padding,      #
 # do this here and use internally for all subsequent files                        #
-                                                                                  #
-files <- read.table("P0_Station_List.txt",header=FALSE,stringsAsFactors=FALSE,    #
-    col.names=c("FileName","Lat","Long"))                                         #
-file1 <- file.path("A0_Input_Data",files[,"FileName"])     # file names with path #
-Station <- gsub("[[:space:]]|[[:punct:]]|txt|$","",files[,"FileName"])            #
-if (nstn == 0L) nstn <- nrow(files) else nstn <- min(nrow(files),nstn)            #
-Sout <- rep("_______________________",nstn)            # padding to 23 characters #
-substring(Sout,1L,23L) <- Station[1:nstn] # replace "_" with station name up to 23#
-                                                                                  #
-# For internal use also require longitudes in the range -180 to 180               #
-# This is for generating the land points for regional average, and for map plots  #
-                                                                                  #
-olats <- files[1:nstn,"Lat"]                                                      #
-olons <- files[1:nstn,"Long"]                                                     #
-olons[olons >= 180] <- olons[olons >= 180]-360                                    #
-                                                                                  #
-X <- data.frame(Station=Sout,Lat=olats,Long=olons,stringsAsFactors=FALSE)         #
-write.table(X,file=file.path(folder,"P2_Station_List.txt"),row.names=FALSE)       #
-                                                                                  #
-#    Read station list. Done!                                                     #
+# Assuming here that the files are in a readable format - it is planned to        #
+# formally check this in a pre-processing script before P1_Quality_Control.R      #
 ###################################################################################
+
+files <- read.table("P0_Station_List.txt",header=FALSE,stringsAsFactors=FALSE,
+    col.names=c("FileName","Lat","Long"))
+file1 <- file.path("A0_Input_Data",files[,"FileName"])  # file names with path
+
+# Get number of stations, subject to the upper limit
+
+nstns <- nrow(files)
+if (nstn == 0L) nstn <- min(nstns,stnhi)
+if (nstn > nstns) {
+  warning("Requested ",nstn," stations but only ",nstns," available - resetting",call.=FALSE)
+  nstn <- nstns
+} else if (nstn < nstns) {
+  cat("Processing first",nstn,"of",nstns,"stations in file",fill=TRUE)
+}
+
+# Remove non-standard characters from input station name and fixed at
+# 23 characters, appeding with "_" where required
+# This formatting may change in future versions of the code
+
+Station <- gsub("[[:space:]]|[[:punct:]]|txt|$","",files[,"FileName"])
+Sout <- rep("_______________________",nstn)
+substring(Sout,1L,23L) <- Station[1:nstn]
+
+# For internal use also require longitudes in the range -180 to 180
+# This is for generating the land points for regional average, and for map plots
+
+olats <- files[1:nstn,"Lat"]
+olons <- files[1:nstn,"Long"]
+olons[olons >= 180] <- olons[olons >= 180]-360
+X <- data.frame(Station=Sout,Lat=olats,Long=olons,stringsAsFactors=FALSE)
+cat("Sucessfully read in station list",fill=TRUE)
+
+###################################################################################
+# Set up miscellaneous variables                                                  #
+###################################################################################
+
+max.miss <- c(monthly=missm,annual=missa)  # for climdexInput.raw
 
 # Output column names (now standard across CSV files)
 cnames <- c("Year",month.name,"Annual")
@@ -169,19 +221,21 @@ cnames <- c("Year",month.name,"Annual")
 # Fixed days per month
 Days <- c(31L,28L,31L,30L,31L,30L,31L,31L,30L,31L,30L,31L)
 
-# Begins loop for reading data files and doing calculations
-cat("\n")
-for (i in 1:nstn) {                                           # use i=1 for testing
+###################################################################################
+# Begins loop for reading data files and doing calculations                       #
+###################################################################################
+# For testing purposes, can modify the indices to loop over (normally process all)
+
+for (i in 1:nstn) {
 cat(i,"\t",Station[i],fill=TRUE)
 
 # Output file names for all indices for this station
-
 namex <- paste(dirs,"/",Sout[i],"_",ele,".csv",sep="")
 
-# Read station's data
-# Consider allowing CSV files - could then set missing to blank rather than fixed value
-# However, since the format of the data file is specified, can use additional arguments
-# to read.table to speed it up and reduce memory usage
+# Read station data
+# Since have specified the format, apply additional arguments to read.table()
+# to significantly speed up the reading and reduce the internal memory used
+# Consider allowing CSV formats in future versions of the code
 # Not good practice (but works) to use "data" as a variable name
 
 data <- read.table(file1[i],header=FALSE,na.strings="-99.9",comment.char="",
@@ -200,17 +254,18 @@ data1$Prec[data1$Prec < 1] <- 0                 # replace prec less than 1 with 
 # Calculate monthly values where missing days are below the threshold             #
 # Would be desirable to allow for leap years, but this would be rather harder     #
 # as need to account for partial months and years                                 #
+                                                                                  #
 Month <- data1[,.(                                                                #
      Pr=ifelse(Days[Mo]-sum(!is.na(Prec)) > missm,NA_real_,sum(Prec,na.rm=TRUE)), #
      Tm=ifelse(Days[Mo]-sum(!is.na(Tm)) > missm,NA_real_,mean(Tm,na.rm=TRUE))),by=.(Year,Mo)]
                                                                                   #
-# Calculate yearly value - if months missing result will be NA (as per WMO 2009)  #
+# Calculate yearly value - if months missing result will be NA (as per WMO-1201)  #
 #Year <- Month[,.(Pr.Y=sum(Pr),Tm.Y=mean(Tm),by=Year]                             #
                                                                                   #
 # Calculate annual value where missing days are below the threshold               #
 Year <- data1[,.(                                                                 #
        Pr.Y=ifelse(365L-sum(!is.na(Prec)) > missa,NA_real_,sum(Prec,na.rm=TRUE)), #
-       Tm.Y=ifelse(365L-sum(!is.na(Tm)) > missa,NA_real_,mean(Tm,na.rm=TRUE))),by=Year]                              #
+       Tm.Y=ifelse(365L-sum(!is.na(Tm)) > missa,NA_real_,mean(Tm,na.rm=TRUE))),by=Year]
                                                                                   #
 # Shape monthly values into table by year                                         #
 # This now explictly uses data.table::dcast >= 1.9.6                              #
@@ -233,25 +288,22 @@ colnames(Temp) <- cnames                                                        
 # Write output files                                                              #
 write.csv(Prec,file=namex[5],row.names=FALSE,na="-99.9")                          #
 write.csv(Temp,file=namex[1],row.names=FALSE,na="-99.9")                          #
-                                                                                  #
-#    This writes the monthly and annual prec and temp data. Done!                 #
+cat("Written monthly totals",fill=TRUE)                                           #
 ###################################################################################
 
 ###################################################################################
 #    Calculate climatology for mean temp and avg prec                             #
 # Save swapping by using R internal representation of missing values == NA(_real_)#
-# Previously had hard-wired < 7 years missing => 30 years and 80% valid           #
+# Require 'cthresh' years (recommend == 20) for non-missing value                 #
                                                                                   #
 ref <- (Prec$Year >= nybr & Prec$Year <= nyer)                                    #
 Clim.T <- ifelse(colSums(!is.na(Temp[ref,])) >= cthresh,colMeans(Temp[ref,],na.rm=TRUE),NA_real_)
 Clim.P <- ifelse(colSums(!is.na(Prec[ref,])) >= cthresh,colMeans(Prec[ref,],na.rm=TRUE),NA_real_)
-                                                                                  #
-#    This calculates the climatology for each month. Done!                        #
+cat("Calculated monthly climatologies",fill=TRUE)                                 #
 ###################################################################################
 
 ###################################################################################
 #    Calculate the temperature anomaly for mean temp                              #
-                                                                                  #
 # Subtract Climatology from each row                                              #
 # Note that NA, column names etc are taken care of, but leave Year unchanged      #
 # Utilises R vector recycling, but need to transpose Temp to do this              #
@@ -260,14 +312,12 @@ Clim.T[1] <- 0                                                                  
 Temp.Anom <- round(t(t(Temp) - Clim.T),2)                                         #
                                                                                   #
 write.csv(Temp.Anom,file=namex[2],row.names=FALSE,na="-99.9")                     #
-                                                                                  #
-#    Calculated and wrote the temperature anomaly. Done!                          #
 ###################################################################################
 
 ###################################################################################
-#    Calculate the precipitation ratios and anomalies                             #
-                                                                                  #
+#    Calculate the precipitation ratios and anomalies                             #                                                                                  #
 # This is a bit more difficult to deal with the Year column                       #
+# Would like to deal with the case of climatological rainfall == 0                #
                                                                                   #
 Clim.P[1] <- 100                                                                  #
 Prec.Rat <- round(t(t(Prec)/Clim.P*100),1)                                        #
@@ -279,8 +329,7 @@ Prec.Nor.Anom[,"Year"] <- Prec.Anom[,"Year"]                                    
 write.csv(Prec.Rat,file=namex[6],row.names=FALSE,na="-99.9")                      #
 write.csv(Prec.Anom,file=namex[3],row.names=FALSE,na="-99.9")                     #
 write.csv(Prec.Nor.Anom,file=namex[4],row.names=FALSE,na="-99.9")                 #
-                                                                                  #
-#    Calculated and wrote the precipitation ratios and anomaly. Done!             #
+cat("Written anomalies and precipitation ratios",fill=TRUE)                       #
 ###################################################################################
 
 ###################################################################################
@@ -302,8 +351,7 @@ SPI <- round(qnorm(Prob,mean=0,sd=1),1) # input prob into normal quantile func b
 SPI <- cbind(Prec[,.(Year)],t(SPI))                                               #
                                                                                   #
 write.csv(SPI,file=namex[7],row.names=FALSE,na="-99.9")                           #
-                                                                                  #
-#    Calculated and wrote the SPI. Done!                                          #
+cat("Calculated and written SPI",fill=TRUE)                                       #
 ###################################################################################
 
 ###################################################################################
@@ -344,14 +392,22 @@ for (ix in 8:11) { # loop over elements                                         
   write.csv(NCMP45,file=namex[ix],row.names=FALSE,na="-99.9")                     #
 } # End loop over indices                                                         #
                                                                                   #
-#  Calculated and wrote percentage of warm/cold days/nights. Done!                #
+cat("Calulated and written Warm/Cold Day/Night indices",fill=TRUE)                #
 ###################################################################################
 
 ###################################################################################
 #    Calculate the Highest and Lowest Values Tx, Tn and RX1                       #
+# This is known to cause problems with extended periods of missing data,          #
+# and currently prevents the use of precipitation-only stations                   #
+# This is probably caused by which.max/min() returning integer(0)                 #
+# when no data is valid for that month/year                                       #
+# This also defines monthly extreme if *any* value is present, as opposed to      #
+# applying missing value limits for monthly mean/totals                           #
+# One alternative is to use climdex.pcic, although extracting day of month        #
+# then becomes more difficult                                                     #
+# Another alternative is calculate these alongside the basic monthly indices      #
+# in the data.table object - although that might get a bit messy                  #
                                                                                   #
-# The maximum/mininum values can be extracted from climdex.pcic,                  #
-# but the day of the month would be harder                                        #
 # Retain only the Day and value in each row (or add dateMD/DY if used)            #
 # If extreme monthly precipitation is zero, sensible to set day index to missing  #
                                                                                   #
@@ -362,14 +418,13 @@ TnXX <- data[,.SD[which.max(Tn),.(Day,Tn)],by=.(Year,Mo)]                       
 TxNN <- data[,.SD[which.min(Tx),.(Day,Tx)],by=.(Year,Mo)]                         #
 TnNN <- data[,.SD[which.min(Tn),.(Day,Tn)],by=.(Year,Mo)]                         #
                                                                                   #
-# Apparently need to allow for the case of no data for each of Prec, Tx and Tn    #
-# However, have not previously assumed this - why?                                #
 # If no data, set all index values to missing - use a dummy table for all cases   #
+# This does not appear to be working as intended, given the observed issues       #
                                                                                   #
 yrs <- range(data[,Year])                                                         #
 dummy <- data.table(Year=c(yrs[1]:yrs[2],"xxxx"),t(rep(NA,13)))                   #
                                                                                   #
-# By putting the 5 records into a list, it is possible to loop over thems         #
+# By putting the 5 records into a list, it is possible to loop over them          #
 # However, must distinguish between max and min records, and make sure that the   #
 # order lines up with the indices as defined by "ele"                             #
                                                                                   #
@@ -432,14 +487,26 @@ for (ne in 1:5) { # Loop over records                                           
   write.csv(Var.D,file=namex[ix],row.names=FALSE,na="-99")    # was missing == 99 #
 } # Ends loop for indices                                                         #
                                                                                   #
-#  Calculated and wrote extreme values and dates. Done!                           #
+cat("Calculated and written extremes values",fill=TRUE)                           #
 ###################################################################################
 
-} #Ends loop for stations
+}
+
+###################################################################################
+# Ends loop for stations                                                          #
+###################################################################################
+# Write the modified station table and configuration file
+# Do this last so that know have generated all station indices
+
+namex <- file.path(folder,c("P2_Station_List.txt","P2_Configuration.txt"))
+write.table(X,file=namex[1],row.names=FALSE)
 
 dy <- date()
-mess <- c(paste("These indices are calculated using the reference period",nybr,"to",nyer),
-          paste("with threshold of at least",cthresh,"valid years"),
-          paste("Calculation was completed at",dy))
-writeLines(mess,file.path(folder,"Reference_period.txt"))
+desc <- c("Date of processing","Number of stations",
+  "Start of climatological period","End of climatological period",
+  "Daily Temperature Quality Control level","Daily Precipitation Quality Control Level")
+mess <- paste(desc,c(dy,nstn,nybr,nyer,QCT,QCPr),sep=" = ")  # Variables are converted to strings
+writeLines(mess,con=namex[2])
+
 cat("Indices done!",fill=TRUE)
+options(op)
