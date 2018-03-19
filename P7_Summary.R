@@ -11,122 +11,173 @@
 #    December 2016                                                                #
 #    Modified by Justin Peter, Bureau of Meteorology, Australia                   #
 #    December 2017                                                                #
-#                                                                                 #
+#    Added Count Records by Simon Grainger, Bureau of Meteorology, Australia      #
+#    March 2018                                                                   #
 ###################################################################################
 
+cat("***** P7_Summary.R *****",fill=TRUE)
+
+# Since using merge(), consider whether to load the 'data.table' package,
+# although the penalty is probably nominal in this script
+# An effective check of whether can run the code is to load the configuration file
+# If it does not exist, the relevant script has not been successfully run
+
+clist.P2 <- read_configuration("P2")
+clist.P4 <- read_configuration("P4")
+
 ###################################################################################
-#    Read and write the NCMPs time series in the same file                        #
-#                                                                                 #
+#    Gathers input info from the user                                             #
+# For clarity, no longer do this as a separate function                           #
+###################################################################################
+# Suppressing warning messages - about converting strings to integer
 
-#Extract all csv files from the directory
-folder <- "A4_Region_Average"
-files <- list.files(folder,pattern="*.csv",full.names=TRUE)
-ne <- length(files)
+op <- options(warn=-1)	
+cat("Generate the Summary file as given in the WMO ET-NCMP guidelines",fill=TRUE)
 
-#Read all csv files - first three columns only and place into a list
-data <- lapply(files, function(file) read.csv(file,header=TRUE,na.strings="-99.9")[,1:3])
+# The period for the Summary file is limited by the Region Average period,
+# although the count records can use a different one
 
-#Extract the first three columns from each data file
-#for (i in 1:ne){
-#  data[[i]] <- data[[i]][,1:3]
-#}
+ylo <- clist.P4$nyb
+yhi <- clist.P4$nye
 
-#Place all the names in a vector and assign to the data
-#nms <- character(ne)
-nsp <- strsplit(basename(files),"_")
-for (i in 1:ne) {
-  names(data[[i]])[3] <- nsp[[i]][2]
+cat("The ET-NCMP recommends a Summary file period of",ylo,"-",yhi,fill=TRUE)
+nyb <- 0L
+mess <- paste("\nbetween",ylo,"and",yhi,"- recommended =",ylo,": ")
+while (is.na(nyb) || nyb < ylo || nyb > yhi) {
+  cat("Enter beginning year for Summary file period")
+  nyb <- readline(mess)
+  nyb <- as.integer(nyb)
 }
 
-#Merge all the files - unless base::merge is overwritten this should work
-df <- Reduce(merge,data)
+nye <- 0L
+mess <- paste("\nbetween",nyb,"and",yhi,"- recommended =",yhi,": ")
+while (is.na(nye) || nye < nyb || nye > yhi) {
+  cat("Enter ending year for count period")
+  nye <- readline(mess)
+  nye <- as.integer(nye)
+}
+nyrs <- nye-nyb+1L
+cat("User input collected",fill=TRUE)
 
-#Apply rounding - except to year and month
-df[,-(1:2)] <- round(df[,-(1:2)],3)
+# Turn warnings back on, but print immediately
+options(warn=1)
 
-#Order the data frame
-df <- df[order(df$Year,df$Month),]
+###################################################################################
+# Information for indices to process                                              #
+# Note that the Guidance only requires the extreme warm day and cold nights       #
+# - i.e. TX90p, TN10p Region averages and TXx, TNn and RXday1 absolute records    #
+# Make the others optional here, along with PrA as it is not clear whether the    #
+# Region average estimation is reliable for that variable                         #
+###################################################################################
+# Names of input regional average files
+	
+tname <- clist.P4$tname
+elez <- c("TMA","PrAn","PrA","SPI","TX90p","TN90p","TX10p","TN10p")
+folder <- "A4_Region_Average"
+filez <- file.path(folder,paste(tname,ele,"Region_Avg.csv",sep="_"))
+optionalz <- c(FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE)
 
-#Write the output summary file
-folder <- "A7_Summary"
-dir.create(folder,showWarnings=FALSE)              
+# Names of input count record files
 
-files<-paste(folder,"/A1_Summary1_check.csv",sep="")
-write.csv(df,file=files,row.names=FALSE,na="-99.900")
+eler <- c("TXx","TXn","TNx","TNn","RXday1")
+folder <- "A6_Count_Records"
+filer <- file.path(folder,paste(tname,ele,"Count_Record.csv",sep="_"))
+optionalr <- c(FALSE,TRUE,TRUE,FALSE,FALSE)
 
-##                                                                                 #
-##    Read and write the NCMPs time series: done!                                  #
-####################################################################################
-#
-message("Done! \n")
+# Concatenate these into a single variable to enable a single loop
 
+ele <- c(elez,eler)
+namex <- c(filez,filer)
+optional <- c(optionalz,optionalr)
 
-#file1=read.table("A4_Region_Average/NCMP_TMA_Region_Avg.csv",header=T,sep=",")
-#file1=file1[,1:3]    
-#names(file1)=c("Year","Month","TMA")                                   
-#
-#file2=read.table("A4_Region_Average/NCMP_PrAn_Region_Avg.csv",header=T,sep=",")   
-#file2=file2[,1:3]
-#names(file2)=c("Year","Month","PrAn")                                      
-#
-#file3=read.table("A4_Region_Average/NCMP_PrA_Region_Avg.csv",header=T,sep=",")   
-#file3=file3[,1:3]
-#names(file3)=c("Year","Month","PrA")                                      
-#
-#file4=read.table("A4_Region_Average/NCMP_SPI_Region_Avg.csv",header=T,sep=",")
-#file4=file4[,1:3]    
-#names(file4)=c("Year","Month","SPI")                                   
-#
-#file5=read.table("A4_Region_Average/NCMP_TX10p_Region_Avg.csv",header=T,sep=",")   
-#file5=file5[,1:3]
-#names(file5)=c("Year","Month","TX10p")                                      
-#
-#file6=read.table("A4_Region_Average/NCMP_TX90p_Region_Avg.csv",header=T,sep=",")   
-#file6=file6[,1:3]
-#names(file6)=c("Year","Month","TX90p")                                      
-#
-#file7=read.table("A4_Region_Average/NCMP_TN10p_Region_Avg.csv",header=T,sep=",")
-#file7=file7[,1:3]    
-#names(file7)=c("Year","Month","TN10p")                                   
-#
-#file8=read.table("A4_Region_Average/NCMP_TN90p_Region_Avg.csv",header=T,sep=",")
-#file8=file8[,1:3]    
-#names(file8)=c("Year","Month","TN90p")                                   
-#
-#
-#
-#data1=merge(file1,file2,by=c(1,2))
-#data1=data1[order(data1$Year,data1$Month),] 
-#
-#data2=merge(data1,file3,by=c(1,2))
-#data2=data2[order(data2$Year,data2$Month),] 
-#
-#data3=merge(data2,file4,by=c(1,2))
-#data3=data3[order(data3$Year,data3$Month),] 
-#
-#data4=merge(data3,file5,by=c(1,2))
-#data4=data4[order(data4$Year,data4$Month),] 
-#
-#data5=merge(data4,file6,by=c(1,2))
-#data5=data5[order(data5$Year,data5$Month),] 
-#
-#data6=merge(data5,file7,by=c(1,2))
-#data6=data6[order(data6$Year,data6$Month),] 
-#
-#data7=merge(data6,file8,by=c(1,2))
-#data7=data7[order(data6$Year,data7$Month),] 
-#
-##data5=round(data5,3)
-#data7=round(data7,3)
-#
-#dir.create("A7_Summary",showWarnings=FALSE)              
-##names(data5)=c("Year","Month","TMA","PrAn","PrA","SPI","TX90p","TN10p")                            
-#names(data7)=c("Year","Month","TMA","PrAn","PrA","SPI","TX10p","TX90p","TN10p","TN90p")                            
-##write.table(data5,file="A7_Summary/A1_Summary1.csv",sep=",",row.names=FALSE)
-#write.table(data7,file="A7_Summary/A1_Summary1.csv",sep=",",row.names=FALSE)
-#
-##                                                                                 #
-##    Read and write the NCMPs time series: done!                                  #
-####################################################################################
-#
-#message("Done! \n")
+# Initialise storage for output tables
+# Use dummy tables for merging each diagnostic
+
+X <- data.frame(Year=rep(nyb:nye,each=13),Month=rep(1:13,times=nyrs))
+X0 <- X
+nrec <- nrow(X)
+Xdum <- data.frame(X0,Index=rep(NA_real_,nrec),Count=rep(0L,nrec))
+
+###################################################################################
+# Begins loop over diagnostic files                                               #
+###################################################################################
+
+cat("Extracting Region Average and absolute Count Records",fill=TRUE)
+for (ne in seq_along(ele)) {
+
+# Set column names for this diagnostic
+# These are consistent with P4 and P6 files but not the Guidance
+# This may need to change, as it is arguable that TX90p and TXx are confusing
+# (although these names are ultimately based on the WMO ETCCDI definitions)
+
+  if (ne <= 8L) {
+    desc <- "Region Average"
+	vname1 <- "Index"
+  } else {
+    desc <- "Count Record"
+	vname1 <- "Count"
+  }
+  vnames <- paste(ele[ne],c(vname1,"No of Stns"))
+
+# Check whether diagnostic has been calculated
+# If not, fill with the dummy table
+# Note that P6_Count_Records.R currently processes all 5 diagnostics at once
+
+  if (!file.exists(namex[ele])) {
+    cat(desc,"has not been calculated for",ele[ne],fill=TRUE)
+	if (!optional[ne]) {
+	  cat("Summary file will be filled with missing values",fill=TRUE)
+	  names(Xdum)[3:4] <- vnames
+	  X <- merge(X,Xdum,by=c("Year","Month"))
+	  next
+	}
+  }
+
+# Ask if wish to skip the "optional" diagnostics
+
+  if (optional[ne]) {
+    cat(desc,ele[ne],"is optional for Summary file",fill=TRUE)
+	icheck <- readline("\nDo you wish to skip this diagnostic? (y/n) : ")
+	if (icheck == 'y') next
+  }
+
+# Read in diagnostic, a the required years
+# The rows *should* remain sorted, although there is an example in P1_Quality_Control.R
+# where the data.table::merge required further sorting
+# The Guidance implies rounding to 2dp, but the annual extraction is to 3dp
+
+  In <- read.csv(file=namex[ne],header=TRUE,na.strings="-99.9",check.names=FALSE)
+  names(In)[3:4] <- vnames
+  if (ne <= 8L) In[,3] <- round(In[,3],3)
+  X <- merge(X,In,by=c("Year","Month"),all.x=TRUE)
+}
+
+###################################################################################
+# Ends loop over diagnostic files                                                 #
+###################################################################################
+
+cat("Writing Summary file",fill=TRUE)
+
+# Create a header for the Summary file
+# This consists of key metadata used in the analysis
+# The idea of a header, and combining the QC and homogenisation flags, differs from
+# the format in the Guidance, but no information has been lost
+# (unless one can do homogenisation *without* Quality Control, or these vary in time)
+
+desc <- c("Total number of Stations",
+          "Climatological period start","Climatological period end",
+          "Temperature Quality Control level","Precipitation Quality Control level",
+          "Region Average grid resolution","Version")
+vals <- c(clist.P2$nstn,clist.P2$nyb,clist.P2$nye,clist.P2$QCT,clist.P2$QCPr,
+          clist.P4$res,2.0)
+mess <- paste(desc,vals,sep=" = ")
+
+# Write header and table to single file
+# This should be readable by Excel etc
+
+namex <- paste(tname,nyb,nye,"Summary.csv",sep="_")
+writeLines(mess,con=namex)
+write.table(X,file=namex,append=TRUE,row.names=FALSE,sep=",")
+
+cat("Summary file completed!",fill=TRUE)
+options(op)

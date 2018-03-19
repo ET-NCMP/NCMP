@@ -158,9 +158,9 @@ if (icheck == 1L) {
   gvals <- c(0.1,0.25,0.5,1,2)
   gs <- paste(gvals,collapse=", ")  
   cat("Choose a grid spacing for the interpolation.",
-      paste("Allowed grid spacings are",gs,"degrees.",
+      paste("Allowed grid spacings are",gs,"degrees."),
       "Smaller grid spacings will give a more accurate result",
-      "but will run more slowly.",sep="\n"))
+      "but will run more slowly.",sep="\n")
   mess <- paste("\nEnter the desired grid resolution",gs,": ")
   res <- NA_real_ 
   while (!is.element(res,gvals)) {
@@ -436,7 +436,7 @@ cat("Finished reading data for",ele[ne],fill=TRUE)
 # Calculate inter-station variogram values
 # Bugfix: diagonal (zero-distance variance) should be the nugget value 'n1'	
 
-	C0 <- f(Dn,n1,r1,s1)
+    C0 <- f(Dn,n1,r1,s1)
 #    diag(C0) <- 0
     diag(C0) <- n1
 
