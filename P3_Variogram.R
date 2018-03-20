@@ -295,28 +295,28 @@ for (nm in 1:13) {
   s2 <- mean(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE) 
   s0 <- max(s1,s2)
   r0 <- max(250,min(1000,0.5*Dmax))
-  clist <- list(n=n0,r=r0,s=s0)
+  clist <- list(r=r0,s=s0)
 
 #  clist <- list(n=0.01,r=600,s=s0)
-  mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
+  mod1 <- nls(Bl~Gaussian(Dl,0,r,s),start=clist,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod1 <- coef(mod1)
 
 # clist$r <- 400
-  mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
+  mod2 <- nls(Bl~Exponential(Dl,0,r,s),start=clist,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod2 <- coef(mod2)
 
 # clist$r <- 800
-  mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
+  mod3 <- nls(Bl~Spherical(Dl,0,r,s),start=clist,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod3 <- coef(mod3)
 
 # Copy fitted coefficients to n,r and s
 
-  n <- c(cmod1[1],cmod2[1],cmod3[1])
-  r <- c(cmod1[2],cmod2[2],cmod3[2])
-  s <- c(cmod1[3],cmod2[3],cmod3[3])
+  n <- c(0,0,0)
+  r <- c(cmod1[1],cmod2[1],cmod3[1])
+  s <- c(cmod1[2],cmod2[2],cmod3[2])
 
 # Calculate mean squared error for each fit
 

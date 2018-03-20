@@ -46,15 +46,15 @@ inquiry <- function() {                   # start function, defined before calle
 # and the easiest way is to do the conversion and suppress the warning            #
                                                                                   #
   uptx <- NA_real_                                                                #
-  while (is.na(uptx) || uptx < -65 || uptx > 50) {                                #
+  while (is.na(uptx) || uptx < -65 || uptx > 55) {                                #
     cat("Enter value (Celsius) to identify upper limit for maximum temperature")  #
-    uptx <- readline("\n(between -65 and 50, example 40): ")                      #
+    uptx <- readline("\n(between -65 and 55, example 40): ")                      #
     uptx <- suppressWarnings(as.numeric(uptx)) }                                  #
                                                                                   #
   lotx <- NA_real_                                                                #
-  while (is.na(lotx) || lotx < -65 || lotx > 50) {                                #
+  while (is.na(lotx) || lotx < -65 || lotx > 55) {                                #
     cat("Enter value (Celsius) to identify lower limit for maximum temperature")  #
-    lotx <- readline("\n(between -65 and 50, example -30): ")                     #
+    lotx <- readline("\n(between -65 and 55, example -30): ")                     #
     lotx <- suppressWarnings(as.numeric(lotx)) }                                  #
                                                                                   #
   uptn <- NA_real_                                                                #

@@ -130,22 +130,32 @@ if (icheck == 1L) {
 # The first check generates a valid ISO 3166-1 code
 
   tcode <- NA_character_
+
   while (!is.element(tcode,wrld_simpl@data[,"ISO3"]) && !is.element(tcode,c("REG"))) {
-    tcode <- readline("\nEnter Country or Region to process: ")
-    UNcode <- as.integer(tcode)
-    if (!is.na(UNcode) && UNcode == 0L) {
-	  tcode <- "REG"
-    } else {	  
-      ix <- which(is.element(wrld_simpl@data[,"UN"],UNcode))
-      if (length(ix) == 1L) tcode   <- levels(wrld_simpl@data[,"ISO3"])[wrld_simpl@data[ix,"ISO3"]]
-      if (length(ix) == 1L) uncode2 <- wrld_simpl@data[ix,"UN"]
-      if (length(ix) == 1L) tname   <- levels(wrld_simpl@data[,"NAME"])[wrld_simpl@data[ix,"NAME"]]
-    }
+      tcode <- readline("\nEnter Country or Region to process: ")
+
+      if (tcode == 0L) {
+          tcode = "REG"
+          uncode2 = "0"
+          tname = "Region"
+      } else {
+          UNcode <- as.integer(tcode)
+          if (!is.na(UNcode)) {
+     	      print("Numeric code entered")
+              ix <- which(is.element(wrld_simpl@data[,"UN"],UNcode))
+              if (length(ix) == 1L) tcode   <- levels(wrld_simpl@data[,"ISO3"])[wrld_simpl@data[ix,"ISO3"]]
+	      if (length(ix) == 1L) uncode2 <- wrld_simpl@data[ix,"UN"]
+	      if (length(ix) == 1L) tname   <- levels(wrld_simpl@data[,"NAME"])[wrld_simpl@data[ix,"NAME"]]
+          } else {
+	      print("AlphaNumeric code entered")
+              ix <- which(is.element(wrld_simpl@data[,"ISO3"],tcode))
+              if (length(ix) == 1L) tcode   <- levels(wrld_simpl@data[,"ISO3"])[wrld_simpl@data[ix,"ISO3"]]
+	      if (length(ix) == 1L) uncode2 <- wrld_simpl@data[ix,"UN"]
+	      if (length(ix) == 1L) tname   <- levels(wrld_simpl@data[,"NAME"])[wrld_simpl@data[ix,"NAME"]]
+          }     
+      }   
   }
 
-# Use the ISO 3166-1 code to get a default (English) country or region name
-	
-  if (tcode == "REG") tname <- "Region"
   cat("Current Country/Region name =",tname,fill=TRUE)
   tname2 <- readline("\nType new name or press 'Enter' to retain : ")
   if (nchar(tname2) > 0L) tname <- tname2

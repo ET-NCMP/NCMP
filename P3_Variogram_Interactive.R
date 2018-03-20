@@ -306,25 +306,26 @@ for (nm in 1:13) {
 # TEST: Use the same start values for each station
 
     r0 <- max(250,min(1000,0.5*maxrange))
-	clist <- list(n=n0,r=r0,s=s0)
+#	clist <- list(n=n0,r=r0,s=s0)
+	clist <- list(r=r0,s=s0)
 	
-    mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
+    mod1 <- nls(Bl~Gaussian(Dl,0,r,s),start=clist,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod1 <- coef(mod1)
 
-    mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
+    mod2 <- nls(Bl~Exponential(Dl,0,r,s),start=clist,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod2 <- coef(mod2)
 
-    mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
+    mod3 <- nls(Bl~Spherical(Dl,0,r,s),start=clist,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod3 <- coef(mod3)
 
 # Copy fitted coefficients to n,r and s
 
-    n <- c(cmod1[1],cmod2[1],cmod3[1])
-    r <- c(cmod1[2],cmod2[2],cmod3[2])
-    s <- c(cmod1[3],cmod2[3],cmod3[3])
+    n <- c(0,0,0)
+    r <- c(cmod1[1],cmod2[1],cmod3[1])
+    s <- c(cmod1[2],cmod2[2],cmod3[2])
 
 # Calculate mean squared error for each fit
 
@@ -342,14 +343,14 @@ for (nm in 1:13) {
     X[nm,"s"] <- s[k]
     X[nm,"Mean Sq Err"] <- E[k]
 
-# Plot binned data and best fit variogram
-# Commented out curves for all fitted variograms
+# Plot binned data and best fit variogram, set y range from 0 to max non-missing value
+    maxBl <- max(Bl_full, na.rm = TRUE)
 
-    plot(Dl,Bl_full,xlab="Distance",ylab="Diff in Index",col="Blue")  # Plot Dl and Bl
+    plot(Dl,Bl_full,xlab="Distance",ylab="Diff in Index",col="Blue", ylim=c(0,maxBl))  # Plot Dl and Bl
     title(cnames[nm],line=0.5)
-#    curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
-#    curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
-#    curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
+    curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
+    curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
+    curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
 # Highlight best fit in red
     curve(get(Graph[k])(x,n[k],r[k],s[k]),col="red",add=TRUE)
 
