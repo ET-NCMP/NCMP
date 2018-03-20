@@ -73,7 +73,7 @@ yclo <- 1981L  # recommended start year for climatological period (WMO-1201, 201
 ychi <- 2010L  # recommended end year for climatological period (WMO-1201, 2017)
 cthresh <- 20L # number of years required for calculating a valid climatology
 missm <- 10L   # No. of missing days allowable for valid month (WMO-1201, 2017)
-missa <- 36L   # No. of missing days allowable for valid year (no standard)
+missa <- 120L   # No. of missing days allowable for valid year (no standard)
 
 ###################################################################################
 #    Gathers input info from the user                                             #
@@ -98,7 +98,7 @@ while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
 # Obtain quality control flags for temperature and rainfall data for Summary
 # The single 0/1/2 differs slightly from that defined in the Guidance Annex
 
-cat("Input data quality control level value:","0 = No Quality Control",
+cat("To what level have the input data been quality controlled?:","0 = No Quality Control",
     "1 = Quality Control","2 = Quality Control plus homogenisation",sep="\n")
 mess <- "\nEnter Quality Control level value for station daily temperature : "
 QCT <- NA_integer_
@@ -137,7 +137,7 @@ while (is.na(nyer) || nyer < yr1 || nyer > yr2) {
   nyer <- readline(mess)
   nyer <- as.integer(nyer)
 }
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)

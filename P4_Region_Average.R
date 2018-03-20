@@ -90,7 +90,7 @@ if (icheck == 1L) {
 # editing of 'P2_Station_List.txt'
 # Still suppressing warning messages - about converting strings to integer
 
-  cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
+  cat("\nCan either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
   nstn <- NA_integer_
   mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",stnhi,": ")
   while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
@@ -105,7 +105,7 @@ if (icheck == 1L) {
   mess <- paste("\nbetween",yrlo,"and",yrhi,"- suggested =",ytlo,": ")  
   nyb <- 0L
   while (is.na(nyb) || nyb < yrlo || nyb > yrhi) {
-    cat("Enter beginning year for region average")
+    cat("\nEnter beginning year for region average")
     nyb <- readline(mess)
     nyb <- as.integer(nyb)
   }
@@ -122,7 +122,7 @@ if (icheck == 1L) {
 # The easiest identifier is the ISO 3166-1 3 letter code, but internally use the UN code
 # Currently not considering the region and subregion numeric codes  
   
-  cat("Enter one of the following options for a Country or Region:",
+  cat("\nEnter one of the following options for a Country or Region:",
       "\tISO 3166-1 three (3) letter Country code",
       "\tUN digital Country code or 0 for regional average",
       "\tSee 'www.nationsonline.org/oneworld/countrycodes.htm'",sep="\n")
@@ -167,8 +167,9 @@ if (icheck == 1L) {
 
   gvals <- c(0.1,0.25,0.5,1,2)
   gs <- paste(gvals,collapse=", ")  
-  cat("Choose a grid spacing for the interpolation.",
+  cat("\nChoose a grid spacing for the interpolation.",
       paste("Allowed grid spacings are",gs,"degrees."),
+      "1 degree corresponds to around 100km.",
       "Smaller grid spacings will give a more accurate result",
       "but will run more slowly.",sep="\n")
   mess <- paste("\nEnter the desired grid resolution",gs,": ")
@@ -192,8 +193,7 @@ if (icheck == 1L) {
 # Which diagnostic to compute
 # Removed the option to process all diagnostics in one run of the script
 
-cat("Please note that this program is heavily computational.",
-    "It may require one hour for one index for 100 stations.",
+cat("\nPlease note that this program is heavily computational. It may require one hour for one index for 100 stations.",
     "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
     "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
     "For NCMP 2, Monthly Total Precipitation Anomaly , enter 3.",
@@ -245,13 +245,13 @@ cnames <- c(month.name,"Annual")
 # New user input to make output of gridded data optional
 # These would be more compact if used netCDF files (or similar)
 
-cat("Grid square data files may use large amounts of disk space",fill=TRUE)
+cat("\nGrid square data files may use large amounts of disk space",fill=TRUE)
 igrid <- NA_integer_
 while (is.na(igrid) || igrid < 0L || igrid > 1L) {
   igrid <- readline("\nWrite grid square files? (0 = No, 1 = Yes) : ")
   igrid <- as.integer(igrid)
 }
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)

@@ -53,7 +53,7 @@ cat("Count the number of station temperature and precipitation records set each 
 # Suppressing warning messages - about converting strings to integer
 
 op <- options(warn=-1)	
-cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
+cat("\nCan either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
 nstn <- NA_integer_
 mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",clist.P4$nstn,": ")
 while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
@@ -73,7 +73,7 @@ yr2 <- yhi - nthresh + 1L
 nyb <- 0L
 mess <- paste("\nbetween",yr1,"and",yr2,"- recommended =",yclo,": ")
 while (is.na(nyb) || nyb < yr1 || nyb > yr2) {
-  cat("Enter beginning year for count record period")
+  cat("\nEnter beginning year for count record period")
   nyb <- readline(mess)
   nyb <- as.integer(nyb)
 }
@@ -88,7 +88,7 @@ while (is.na(nye) || nye < yr1 || nye > yr2) {
   nye <- as.integer(nye)
 }
 nyrs <- nye-nyb+1L
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)

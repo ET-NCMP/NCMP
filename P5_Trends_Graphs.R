@@ -72,7 +72,7 @@ cat("Calculate and Station and Region average trends",
 # editing of 'P2_Station_List.txt'
 # Still suppressing warning messages - about converting strings to integer
 	
-cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
+cat("\nCan either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
 nstn <- NA_integer_
 mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",clist.P4$nstn,": ")
 while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
@@ -91,7 +91,7 @@ yr2 <- yahi - tthresh + 1L
 nyba <- 0L
 mess <- paste("\nbetween",yr1,"and",yr2,"- recommended =",yalo,": ")
 while (is.na(nyba) || nyba < yr1 || nyba > yr2) {
-  cat("Enter beginning year for region average trend period")
+  cat("\nEnter beginning year for region average trend period")
   nyba <- readline(mess)
   nyba <- as.integer(nyba)
 }
@@ -115,7 +115,7 @@ yr2 <- yhi - tthresh + 1L
 nyb <- 0L
 mess <- paste("\nbetween",yr1,"and",yr2,"- recommended =",nyba,": ")
 while (is.na(nyb) || nyb < yr1 || nyb > yr2) {
-  cat("Enter beginning year for station trend period")
+  cat("\nEnter beginning year for station trend period")
   nyb <- readline(mess)
   nyb <- as.integer(nyb)
 }
@@ -131,7 +131,7 @@ while (is.na(nye) || nye < yr1 || nye > yr2) {
 }
 #nyrs <- nye-nyb+1L
 
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)

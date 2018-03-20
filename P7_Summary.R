@@ -47,7 +47,7 @@ cat("The ET-NCMP recommends a Summary file period of",ylo,"-",yhi,fill=TRUE)
 nyb <- 0L
 mess <- paste("\nbetween",ylo,"and",yhi,"- recommended =",ylo,": ")
 while (is.na(nyb) || nyb < ylo || nyb > yhi) {
-  cat("Enter beginning year for Summary file period")
+  cat("\nEnter beginning year for Summary file period")
   nyb <- readline(mess)
   nyb <- as.integer(nyb)
 }
@@ -60,7 +60,7 @@ while (is.na(nye) || nye < nyb || nye > yhi) {
   nye <- as.integer(nye)
 }
 nyrs <- nye-nyb+1L
-cat("User input collected",fill=TRUE)
+cat("User input collected. Thank you.",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)

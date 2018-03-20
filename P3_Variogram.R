@@ -59,7 +59,7 @@ w <- 20                 # bin width (km)
 # For clarity, no longer do this as a separate function                           #
 ###################################################################################
 
-cat("Calculating Variograms from Station monthly series for selected NCMP indices",fill=TRUE)
+cat("Calculating Variograms from monthly and annual station series for selected NCMP indices",fill=TRUE)
 
 # Number of stations to process
 # Can exclude stations at the end of the list, but arbitrary selection requires
@@ -80,7 +80,7 @@ if (nstn == 0L) nstn <- stnhi
 # Allow the full range of years but effectively recommend the climatological period
 # Without a minimum threshold, the user can generate contradictory messages
 
-cat("The ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
+cat("\nThe ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
 yr1 <- yrlo
 yr2 <- yrhi
 nyb <- 0L
@@ -104,7 +104,7 @@ while (is.na(nye) || nye < yr1 || nye > yr2) {
 # Which diagnostic to compute
 # Removed the option to process all diagnostics in one run of the script
 
-cat("Please note that this program is heavily computational.",
+cat("\nPlease note that this program is heavily computational.",
     "It may require 30 minutes for one index for 100 stations.",
     "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
     "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
@@ -119,7 +119,7 @@ while (is.na(ne) || ne < 1L || ne > 8L) {
   ne <- readline("\nEnter the desired NCMP number (between 1 and 8) : ")
   ne <- as.integer(ne)
 }
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)
