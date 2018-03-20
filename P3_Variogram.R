@@ -336,8 +336,9 @@ for (nm in 1:13) {
 
 # Plot binned data and best fit variogram
 # Commented out curves for all fitted variograms
+  maxBl <- max(Bl, na.rm = TRUE)
 
-  plot(Dl,Bl,xlab="Distance",ylab="Diff in Index",col="Blue")  # Plot Dl and Bl
+  plot(Dl,Bl,xlab="Distance",ylab="Diff in Index",col="Blue", ylim=c(0,maxBl))  # Plot Dl and Bl
   title(cnames[nm],line=0.5)
 #  curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
 #  curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
