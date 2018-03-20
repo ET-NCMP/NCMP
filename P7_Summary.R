@@ -22,7 +22,7 @@ cat("***** P7_Summary.R *****",fill=TRUE)
 # An effective check of whether can run the code is to load the configuration file
 # If it does not exist, the relevant script has not been successfully run
 
-source("Support_configuration.R")
+source("Support_Configuration.R")
 clist.P2 <- read_configuration("P2")
 clist.P4 <- read_configuration("P4")
 
@@ -40,6 +40,8 @@ cat("Generate the Summary file as given in the WMO ET-NCMP Guidance",fill=TRUE)
 
 ylo <- clist.P4$nyb
 yhi <- clist.P4$nye
+
+
 
 cat("The ET-NCMP recommends a Summary file period of",ylo,"-",yhi,fill=TRUE)
 nyb <- 0L
@@ -76,7 +78,7 @@ tname <- clist.P4$tname
 elez <- c("TMA","PrAn","PrA","SPI","TX90p","TN90p","TX10p","TN10p")
 folder <- "A4_Region_Average"
 # *** Hack for testing - should be tname
-filez <- file.path(folder,paste("NCMP",elez,"Region_Avg.csv",sep="_"))
+filez <- file.path(folder,paste(tname,elez,"Region_Avg.csv",sep="_"))
 optionalz <- c(FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE)
 
 # Names of input count record files

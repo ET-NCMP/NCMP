@@ -20,7 +20,7 @@ cat("***** P6_Count_Records.R *****",fill=TRUE)
 # An effective check of whether can run the code is to load the configuration file
 # If it does not exist, the relevant script has not been successfully run
 
-source("Support_configuration.R")
+source("Support_Configuration.R")
 clist.P2 <- read_configuration("P2")
 clist.P4 <- read_configuration("P4")
 
