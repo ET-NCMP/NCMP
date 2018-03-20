@@ -31,7 +31,7 @@ percent.days.op.threshold.mod <- function(ci,freq,type)
     }
     dat[is.nan(dat)] <- NA
     na.mask <- ifelse(climdex.pcic:::tapply.fast(dat,ci@date.factors[[freq]],
-        function(x) sum(is.na(x)) > ci@max.missing.days["monthly"]),NA,1)
+        function(x) sum(is.na(x)) > ci@max.missing.days[freq]),NA,1)
     ret <- climdex.pcic:::tapply.fast(dat, ci@date.factors[[freq]], mean, na.rm = TRUE) * 
         100 * na.mask
     ret[is.nan(ret)] <- NA

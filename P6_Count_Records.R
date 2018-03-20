@@ -20,6 +20,7 @@ cat("***** P6_Count_Records.R *****",fill=TRUE)
 # An effective check of whether can run the code is to load the configuration file
 # If it does not exist, the relevant script has not been successfully run
 
+source("Support_configuration.R")
 clist.P2 <- read_configuration("P2")
 clist.P4 <- read_configuration("P4")
 
@@ -55,7 +56,7 @@ op <- options(warn=-1)
 cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
 nstn <- NA_integer_
 mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",clist.P4$nstn,": ")
-while (is.na(nstn) || nstn < 0L || x > stnhi) {
+while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
   cat("Enter the number of stations to use")
   nstn <- readline(mess)
   nstn <- as.integer(nstn)
@@ -204,28 +205,31 @@ for (ne in 1:5) {
       Ival <- sapply(I1,cummax)
     }
 
-# Having done this, can extract the year of the cumulative record
-# by the index of the run length of each record
+# Having done this, can extract the index (from the start year) of
+# each cumulative record from the sum of the run lengths
+# The need to append to the time series generates a spurious "record" after
+# the end of the data, but this is able to be ignored when converting to years
 
     Irl <- apply(Ival,2,function(x) cumsum(c(1L,rle(x)$lengths)))
-    ilen <- sapply(Irl,length)-1L
 
-# Drop all station records in the first 30 years except the most extreme
-# and the last "record" arising from extending the series by one
-# Increment the counter of any remaining years of record by one
-# Store separately the last (absolute) record set by the station
+# For each month, convert to the year of the record, subject to not more
+# than one cumulative record in the first 30 years
+# Also save the year of the absolute (non-cumulative) record
 
+    ilen <- sapply(Irl,length)  # number of records for each month (+ 1 spurious)
     for (j in 1:13) {
-      Irec <- Irl[[j]][1:ilen[j]]         # drops the spurious last record
-      imax <- max(which(Yr[Irec] <= y2))  # last record in initial period
-      cRec <- cYr[Irec[imax:ilen[j]]]     # years where record set
-      ind <- which(is.element(cRec,cYrc)) # record has been set within count period
-	  irlen <- length(ind)
-      if (irlen > 0L) {
-	    Irecc[cRec[ind],j] <- Irecc[cRec[ind],j] + 1L
-		Irec[cRec[ind[irlen]],j] <- Irec[cRec[ind[irlen]],j] + 1L
+      jmax <- max(which(Yr[Irl[[j]]] <= y2))  # index of last record in start period
+      jrec <- which(is.element(Yr[Irl[[j]]],Yrc) & 1:ilen[j] >= jmax)  # index of valid records
+	  jlen <- length(jrec)
+      if (jlen > 0L) {               # have at least one valid record for this month
+	    jcYr <- cYr[Irl[[j]][jrec]]  # year of valid records, as character
+	    Irecc[jcYr,j] <- Irecc[jcYr,j] + 1L
+        Irec[jcYr[jlen],j] <- Irec[jcYr[jlen],j] + 1L
 	  }
     }
+
+# Ends loop over months
+
   }
   
 ###################################################################################
@@ -252,7 +256,7 @@ for (ne in 1:5) {
 ###################################################################################
 # It is probably useful to retain a "configuration" file for counting records
 
-namex <- file.path(folder,"P5_Configuration.txt")
+namex <- file.path(folder,"P6_Configuration.txt")
 dy <- date()
 desc <- c("Date of processing","Number of stations",
   "Start of count record period","End of count record period")

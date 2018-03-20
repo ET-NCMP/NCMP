@@ -22,6 +22,7 @@ cat("***** P7_Summary.R *****",fill=TRUE)
 # An effective check of whether can run the code is to load the configuration file
 # If it does not exist, the relevant script has not been successfully run
 
+source("Support_configuration.R")
 clist.P2 <- read_configuration("P2")
 clist.P4 <- read_configuration("P4")
 
@@ -32,7 +33,7 @@ clist.P4 <- read_configuration("P4")
 # Suppressing warning messages - about converting strings to integer
 
 op <- options(warn=-1)	
-cat("Generate the Summary file as given in the WMO ET-NCMP guidelines",fill=TRUE)
+cat("Generate the Summary file as given in the WMO ET-NCMP Guidance",fill=TRUE)
 
 # The period for the Summary file is limited by the Region Average period,
 # although the count records can use a different one
@@ -74,14 +75,15 @@ options(warn=1)
 tname <- clist.P4$tname
 elez <- c("TMA","PrAn","PrA","SPI","TX90p","TN90p","TX10p","TN10p")
 folder <- "A4_Region_Average"
-filez <- file.path(folder,paste(tname,ele,"Region_Avg.csv",sep="_"))
+# *** Hack for testing - should be tname
+filez <- file.path(folder,paste("NCMP",elez,"Region_Avg.csv",sep="_"))
 optionalz <- c(FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE)
 
 # Names of input count record files
 
 eler <- c("TXx","TXn","TNx","TNn","RXday1")
 folder <- "A6_Count_Records"
-filer <- file.path(folder,paste(tname,ele,"Count_Record.csv",sep="_"))
+filer <- file.path(folder,paste(tname,eler,"Count_Record.csv",sep="_"))
 optionalr <- c(FALSE,TRUE,TRUE,FALSE,FALSE)
 
 # Concatenate these into a single variable to enable a single loop
@@ -123,7 +125,7 @@ for (ne in seq_along(ele)) {
 # If not, fill with the dummy table
 # Note that P6_Count_Records.R currently processes all 5 diagnostics at once
 
-  if (!file.exists(namex[ele])) {
+  if (!file.exists(namex[ne])) {
     cat(desc,"has not been calculated for",ele[ne],fill=TRUE)
 	if (!optional[ne]) {
 	  cat("Summary file will be filled with missing values",fill=TRUE)
@@ -141,20 +143,24 @@ for (ne in seq_along(ele)) {
 	if (icheck == 'y') next
   }
 
-# Read in diagnostic, a the required years
-# The rows *should* remain sorted, although there is an example in P1_Quality_Control.R
-# where the data.table::merge required further sorting
+# Read in diagnostic, and extract the requested years
 # The Guidance implies rounding to 2dp, but the annual extraction is to 3dp
+# Allowing for extra columns, e.g. planned station index of record counts
 
   In <- read.csv(file=namex[ne],header=TRUE,na.strings="-99.9",check.names=FALSE)
   names(In)[3:4] <- vnames
   if (ne <= 8L) In[,3] <- round(In[,3],3)
-  X <- merge(X,In,by=c("Year","Month"),all.x=TRUE)
+  X <- merge(X,In[,1:4],by=c("Year","Month"),all.x=TRUE)
 }
 
 ###################################################################################
 # Ends loop over diagnostic files                                                 #
 ###################################################################################
+# While by default merge() will sort the output rows, it does so as a character vector
+# Thus the months are in the order 1,10,11,12,13,2,...,9 (in an English locale)
+# Put back into the expected chronological order
+
+ind <- order(X[,"Year"],X[,"Month"])
 
 cat("Writing Summary file",fill=TRUE)
 
@@ -172,12 +178,12 @@ vals <- c(clist.P2$nstn,clist.P2$nyb,clist.P2$nye,clist.P2$QCT,clist.P2$QCPr,
           clist.P4$res,2.0)
 mess <- paste(desc,vals,sep=" = ")
 
-# Write header and table to single file
-# This should be readable by Excel etc
+# Write header and table to single file - generates a warning which can be ignored
+# File has been tested as directly readable by Office 2016 Excel
 
 namex <- paste(tname,nyb,nye,"Summary.csv",sep="_")
 writeLines(mess,con=namex)
-write.table(X,file=namex,append=TRUE,row.names=FALSE,sep=",")
+suppressWarnings(write.table(X[ind,],file=namex,append=TRUE,row.names=FALSE,sep=","))
 
 cat("Summary file completed!",fill=TRUE)
 options(op)
