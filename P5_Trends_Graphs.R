@@ -25,7 +25,6 @@ cat("***** P5_Trends_Graphs.R *****",fill=TRUE)
 
 op <- options(warn=-1)
 library(maps)
-#library(mapdata)
 library(zyp)
 source("Support_Configuration.R")
 cat("Successfully loaded packages",fill=TRUE)
@@ -148,7 +147,7 @@ nybt <- c(nyb,nyb,nyba)
 nyet <- c(nye,nye,nyea)
 dirs <- file.path(folder,paste(folder2,nybt,nyet,sep="_"))  # adds separator "/"
 for (dname in dirs) dir.create(dname,showWarnings=FALSE,recursive=TRUE)
-cat("Directories successfully created",fill=TRUE)                                                                              #
+cat("Directories successfully created",fill=TRUE)
 
 ###################################################################################
 # Set up variables for the 16 station indices to analyse                          #

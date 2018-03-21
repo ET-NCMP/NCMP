@@ -251,9 +251,6 @@ Graph <- c("Gaussian","Exponential","Spherical")  # Which variogram function to 
 ###################################################################################
 # Set specifications for graphs
 # These will be plotted on a single page
-# Bugfix: interactive version should produce one large plot per page
-#pdf(filet[ne])
-#par(mfrow=c(5,3),mar=c(3,4,1,0),oma=c(1,1,1,1),cex=0.5,mgp=c(1.5,0.4,0),tcl=-0.2)
 
 for (nm in 1:13) {
   cat(nm,"\t",cnames[nm],fill=TRUE)
@@ -282,9 +279,6 @@ for (nm in 1:13) {
   cat("Fitting Variogram",fill=TRUE)
 
 # Set up start values for each parameter
-# s0 == the highest of the mean value of 60-80 and 80-100 percentile bins
-# TEST: Define n0 from binned data - mean over 0-20 percentile bins
-
   n0 <- max(0.01,0.95*min(Bl_full[1:as.integer(.2*nbin)],na.rm=TRUE)) 
   s1 <- mean(Bl_full[as.integer(.6*nbin):(as.integer(.8*nbin)-1L)],na.rm=TRUE)
   s2 <- mean(Bl_full[as.integer(.8*nbin):nbin],na.rm=TRUE) 
@@ -304,8 +298,6 @@ for (nm in 1:13) {
     Bl <- ifelse(Dl > maxrange+w/2,NA_real_,Bl_full)
 
 # Fit the Binned data to each variogram function
-# TEST: r0 == 0.5*current maximum range within 250 - 1000 km
-# TEST: Use the same start values for each station
 
     r0 <- max(250,min(1000,0.5*maxrange))
     clist <- list(r=r0,s=s0)
@@ -373,7 +365,6 @@ for (nm in 1:13) {
     }
   }
 }
-#dev.off()
 
 ###################################################################################
 # End loop of interactive (inner) and months (outer)                              #

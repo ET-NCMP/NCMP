@@ -384,8 +384,6 @@ cat("Calculated distances between stations and to grid square centres",fill=TRUE
 # Is this the most appropriate way to limit the weighting for remote stations?
 
 Dmax1 <- round(max(D),-2)  # Maximum distance between stations (rounded to 100km)
-# Bugfix: With the addition of PrA, SPI had used the 3000 km limit
-#if (ne == 2L || ne == 3L) Dmax2 <- 2000 else Dmax2 <- 3000
 if (is.element(ncmpn[ne],2:3)) Dmax2 <- DmaxP else Dmax2 <- DmaxT
 
 Dmax <- min(Dmax1,Dmax2)
@@ -406,15 +404,13 @@ var <- read.csv(file=filev[ne],header=TRUE,stringsAsFactors=FALSE)
 # Instead of assign/get, define list of tables for each station                   #
 ###################################################################################
 # Converting PrAn from percentage back to ratio
-# This also apparently works for PrA (ne == 3), although it would be preferable
-# if there was something less arbitrary 
 
 NCMP.stn <- vector("list",nstn)
 namex <- paste(idirs[ne],"/",Station,"_",ele[ne],".csv",sep="")
 for (i in 1:nstn) {
   I1 <- read.csv(file=namex[i],header=TRUE,na.strings="-99.9")
   if (ne == 2L) I1[,2:14] <- I1[,2:14]/100
-  if (ne == 3L) I1[,2:14] <- I1[,2:14]/100
+  if (ne == 3L) I1[,2:14] <- I1[,2:14]/100  #scale to ensure matrix inversion behaves well
   NCMP.stn[[i]] <- I1
   }
 cat("Finished reading data for",ele[ne],fill=TRUE)
@@ -443,11 +439,10 @@ cat("Finished reading data for",ele[ne],fill=TRUE)
     r1 <- var[nm,"r"]
     f <- get(var[nm,"Function"])
 
-# Calculate inter-station variogram values
-# Bugfix: diagonal (zero-distance variance) should be the nugget value 'n1'	
+# Calculate inter-station variogram values and set diagonaly to nugget
+# diag(C0) <- 0 # original code set diagonal to zero.
 
     C0 <- f(Dn,n1,r1,s1)
-#    diag(C0) <- 0
     diag(C0) <- n1
 
 # Calculate station-to-grid square variogram values
@@ -503,15 +498,15 @@ cat("Finished reading data for",ele[ne],fill=TRUE)
       } else {                     # No contributing stations
         Ix <- rep(NA,length(sqs))  # Set all grid sqs to missing
 	    NCMP[z,nm] <- NA   # Make it clear regional av is also missing
-	  }
+      }
 
 #    Region average calculated. Done!
 # If requested, write the grid square values to CSV file
 
-	  if (igrid == 1L) {
-	          namex <- sub("MONTH",cnames[nm],fileg[z])
-	          X <- cbind(Dsq[sqs,c(1,6:8)],Index=t(Ix))
-        	  write.csv(X,file=namex,row.names=FALSE,na="-99.9")
+      if (igrid == 1L) {
+          namex <- sub("MONTH",cnames[nm],fileg[z])
+          X <- cbind(Dsq[sqs,c(1,6:8)],Index=t(Ix))
+       	  write.csv(X,file=namex,row.names=FALSE,na="-99.9")
       }
     }
   }

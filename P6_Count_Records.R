@@ -146,12 +146,11 @@ for (ne in 1:5) {
   Irecc <- matrix(0L,nyrs,13L,dimnames=list(Yrc,cnames))
 
 ###################################################################################
-# Begins loop over stations		                                                  #
+# Begins loop over stations		                                          #
 ###################################################################################
 
   namex <- file.path(dirs[ne],paste(Station,"_",ele[ne],".csv",sep=""))
   for (i in 1:nstn) {
-#    cat(i,"\t",Station[i],fill=TRUE)
 
 ###################################################################################
 #    Read index data for all stations:                                            #
