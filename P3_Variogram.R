@@ -59,14 +59,14 @@ w <- 20                 # bin width (km)
 # For clarity, no longer do this as a separate function                           #
 ###################################################################################
 
-cat("Calculating Variograms from Station monthly series for selected NCMP indices",fill=TRUE)
+cat("Calculating Variograms from monthly and annual station series for selected NCMP indices",fill=TRUE)
 
 # Number of stations to process
 # Can exclude stations at the end of the list, but arbitrary selection requires
 # editing of 'P2_Station_List.txt'
 # Still suppressing warning messages - about converting strings to integer
 	
-cat("Use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
+cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
 nstn <- NA_integer_
 mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",stnhi,": ")
 while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
@@ -80,7 +80,7 @@ if (nstn == 0L) nstn <- stnhi
 # Allow the full range of years but effectively recommend the climatological period
 # Without a minimum threshold, the user can generate contradictory messages
 
-cat("The ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
+cat("\nThe ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
 yr1 <- yrlo
 yr2 <- yrhi
 nyb <- 0L
@@ -104,7 +104,7 @@ while (is.na(nye) || nye < yr1 || nye > yr2) {
 # Which diagnostic to compute
 # Removed the option to process all diagnostics in one run of the script
 
-cat("Please note that this program is heavily computational.",
+cat("\nPlease note that this program is heavily computational.",
     "It may require 30 minutes for one index for 100 stations.",
     "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
     "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
@@ -119,7 +119,7 @@ while (is.na(ne) || ne < 1L || ne > 8L) {
   ne <- readline("\nEnter the desired NCMP number (between 1 and 8) : ")
   ne <- as.integer(ne)
 }
-cat("User input collected",fill=TRUE)
+cat("Thank you. User input now collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)
@@ -294,37 +294,28 @@ for (nm in 1:13) {
 
   n0 <- max(0.01,0.95*min(Bl[1:as.integer(.2*nbin)],na.rm=TRUE)) 
   sm <- max(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE)
-  s1 <- mean(Bl[as.integer(.6*nbin):(as.integer(.8*nbin)-1L)],na.rm=TRUE)
-  s2 <- mean(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE)
-  s0 <- max(s1,s2)
-  plower <- c(n=0.001,r=100,s=0.5*s0)
-  pupper <- c(n=0.5*s0,r=3*Dmax,s=5*sm)
+  s1 <- median(Bl[as.integer(.6*nbin):(as.integer(.8*nbin)-1L)],na.rm=TRUE)
+  s2 <- median(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE)
+  s0 <- median(Bl[as.integer(.6*nbin):nbin],na.rm=TRUE)
+  plower <- c(r=100,s=0.5*s0)
+  pupper <- c(r=3*Dmax,s=sm)
 
 # Gaussian
-#  clist <- list(n=0.01,r=600,s=s0)
-  clist <- list(n=n0,r=Dmax,s=sm)
-#  mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
-#    control=nls.control(warnOnly=TRUE,maxiter=100))
-  mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
+  clist <- list(r=Dmax,s=sm)
+  mod1 <- nls(Bl~Gaussian(Dl,0,r,s),start=clist,
     algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod1 <- coef(mod1)
 
 # Exponential - same start values as Gaussian
-# clist$r <- 400
-#  mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
-#    control=nls.control(warnOnly=TRUE,maxiter=100))
-  mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
+  mod2 <- nls(Bl~Exponential(Dl,0,r,s),start=clist,
     algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod2 <- coef(mod2)
 
 # Spherical
-# clist$r <- 800
-  clist <- list(n=n0,r=0.5*Dmax,s=s0)
-#  mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
-#    control=nls.control(warnOnly=TRUE,maxiter=100))
- mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
+  clist <- list(r=0.5*Dmax,s=s0)
+ mod3 <- nls(Bl~Spherical(Dl,0,r,s),start=clist,
     algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
  cmod3 <- coef(mod3)
@@ -333,17 +324,16 @@ for (nm in 1:13) {
 # Only constrain n if not using 'port' algorithm,
 # but should then ensure that r and s are also sensible
 
-  n <- c(cmod1[1],cmod2[1],cmod3[1])
-#  n <- pmax(c(cmod1[1],cmod2[1],cmod3[1]),0.01)
-  r <- c(cmod1[2],cmod2[2],cmod3[2])
-  s <- c(cmod1[3],cmod2[3],cmod3[3])
+  n <- c(0,0,0)
+  r <- c(cmod1[1],cmod2[1],cmod3[1])
+  s <- c(cmod1[2],cmod2[2],cmod3[2])
 
 # Calculate mean squared error for each fit
 
   E <- rep(Inf,3)
-  E[1] <- sum((Bl - Gaussian(Dl,n[1],r[1],s[1]))^2,na.rm=TRUE)
+  E[1] <- sum((Bl -    Gaussian(Dl,n[1],r[1],s[1]))^2,na.rm=TRUE)
   E[2] <- sum((Bl - Exponential(Dl,n[2],r[2],s[2]))^2,na.rm=TRUE)
-  E[3] <- sum((Bl - Spherical(Dl,n[3],r[3],s[3]))^2,na.rm=TRUE)
+  E[3] <- sum((Bl -   Spherical(Dl,n[3],r[3],s[3]))^2,na.rm=TRUE)
 
 # Keep name and parameters of best fit
 
@@ -355,18 +345,24 @@ for (nm in 1:13) {
   X[nm,"Mean Sq Err"] <- E[k]
 
 # Plot binned data and best fit variogram
-# Commented out curves for all fitted variograms
+  plot(Dl, Bl, xlim=c(0, 1.05*Dmax), xaxs="i", ylim=c(0.0, 1.05*max(Bl, na.rm=TRUE)), yaxs="i",
+    xlab="Distance", ylab="Diff in Index", col="Blue")
+  title(cnames[nm], line=0.5)
 
-  plot(Dl,Bl,xlim=c(0,1.05*Dmax),xaxs="i",ylim=c(0,1.05*max(Bl,na.rm=TRUE)),yaxs="i",
-    xlab="Distance",ylab="Diff in Index",col="Blue")
-  title(cnames[nm],line=0.5)
+# Plot all fits in green (commented out but handy for debugging)
 #  curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
 #  curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
 #  curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
+
 # Highlight best fit in red
   curve(get(Graph[k])(x,n[k],r[k],s[k]),0,Dmax,col="red",add=TRUE)
+
 # Default Spherical in black - but this function may not be the best for the data
-  curve(Spherical(x,clist$n,clist$r,clist$s),0,Dmax,col="black",lwd=0.5,add=TRUE)
+# This is not currently used in the decision process, so is commented out full 
+# implementation of a workable default is an open issue
+#  clist <- list(n=0,r=0.5*Dmax,s=s0)
+#  curve(Spherical(x,clist$n,clist$r,clist$s),0,Dmax,col="black",lwd=0.5,add=TRUE)
+
 }
 dev.off()  # Close PDF file
 

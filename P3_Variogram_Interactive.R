@@ -269,7 +269,6 @@ for (nm in 1:13) {
     b2 <- Y[[k]][,nm+1,with=FALSE]^2   # Data^2 for this bin and month
     Bl_full[k] <- mean(b2,na.rm=TRUE)  # assign into vector Bl_full
   }
-#  Bl_full <- round(Bl_full,3)
 
 ###################################################################################
 # Fit functional variogram to plot                                                #
@@ -286,10 +285,13 @@ for (nm in 1:13) {
 # s0 == the highest of the mean value of 60-80 and 80-100 percentile bins
 # TEST: Define n0 from binned data - mean over 0-20 percentile bins
 
-  n0 <- max(0.01,0.95*mean(Bl_full[1:as.integer(.2*nbin)],na.rm=TRUE)) 
+  n0 <- max(0.01,0.95*min(Bl_full[1:as.integer(.2*nbin)],na.rm=TRUE)) 
   s1 <- mean(Bl_full[as.integer(.6*nbin):(as.integer(.8*nbin)-1L)],na.rm=TRUE)
   s2 <- mean(Bl_full[as.integer(.8*nbin):nbin],na.rm=TRUE) 
-  s0 <- max(s1,s2)
+  s0 <- median(Bl_full[as.integer(.6*nbin):nbin],na.rm=TRUE)
+  sm <- max(Bl_full,na.rm=TRUE)
+  plower <- c(r=10,s=0.1*s0)
+  pupper <- c(r=3*Dmax,s=sm*3)
 
   maxrange <- Dmax
   fixed_range <- TRUE
@@ -306,18 +308,20 @@ for (nm in 1:13) {
 # TEST: Use the same start values for each station
 
     r0 <- max(250,min(1000,0.5*maxrange))
-#	clist <- list(n=n0,r=r0,s=s0)
-	clist <- list(r=r0,s=s0)
-	
+    clist <- list(r=r0,s=s0)
+
     mod1 <- nls(Bl~Gaussian(Dl,0,r,s),start=clist,
+      algorithm="port",lower=plower,upper=pupper,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod1 <- coef(mod1)
 
     mod2 <- nls(Bl~Exponential(Dl,0,r,s),start=clist,
+      algorithm="port",lower=plower,upper=pupper,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod2 <- coef(mod2)
 
     mod3 <- nls(Bl~Spherical(Dl,0,r,s),start=clist,
+      algorithm="port",lower=plower,upper=pupper,
       control=nls.control(warnOnly=TRUE,maxiter=100))
     cmod3 <- coef(mod3)
 
@@ -348,9 +352,12 @@ for (nm in 1:13) {
 
     plot(Dl,Bl_full,xlab="Distance",ylab="Diff in Index",col="Blue", ylim=c(0,maxBl))  # Plot Dl and Bl
     title(cnames[nm],line=0.5)
-    curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
-    curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
-    curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
+
+#plot all fits in green. Usually commented out, but handy for debugging
+#    curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
+#    curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
+#    curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
+
 # Highlight best fit in red
     curve(get(Graph[k])(x,n[k],r[k],s[k]),col="red",add=TRUE)
 
