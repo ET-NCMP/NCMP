@@ -33,7 +33,7 @@ xx <- getRversion()
 if (xx < "3.0.0") {
   stop("R Version < 3.0.0 cannot execute this code - upgrade is required",call.=FALSE)
 } else if (xx >= "3.0.0" && xx < "3.2.2") {
-  cat("R Version",xx,"should work with this code but is untested - upgraded is suggested",fill=TRUE)
+  cat("R Version",xx,"has not been tested with this code - upgrade is suggested",fill=TRUE)
 }
 xx <- find.package("data.table",quiet=TRUE)
 if (length(xx) == 0L) {
@@ -73,7 +73,7 @@ yclo <- 1981L  # recommended start year for climatological period (WMO-1201, 201
 ychi <- 2010L  # recommended end year for climatological period (WMO-1201, 2017)
 cthresh <- 20L # number of years required for calculating a valid climatology
 missm <- 10L   # No. of missing days allowable for valid month (WMO-1201, 2017)
-missa <- 120L   # No. of missing days allowable for valid year (no standard)
+missa <- 36L   # No. of missing days allowable for valid year (no standard)
 
 ###################################################################################
 #    Gathers input info from the user                                             #

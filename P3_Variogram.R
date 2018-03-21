@@ -59,14 +59,14 @@ w <- 20                 # bin width (km)
 # For clarity, no longer do this as a separate function                           #
 ###################################################################################
 
-cat("Calculating Variograms from monthly and annual station series for selected NCMP indices",fill=TRUE)
+cat("Calculating Variograms from Station monthly series for selected NCMP indices",fill=TRUE)
 
 # Number of stations to process
 # Can exclude stations at the end of the list, but arbitrary selection requires
 # editing of 'P2_Station_List.txt'
 # Still suppressing warning messages - about converting strings to integer
 	
-cat("Can either use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
+cat("Use the first 'n' stations processed by 'P2_Indices.R' or all of them",fill=TRUE)
 nstn <- NA_integer_
 mess <- paste("\nbetween 1 and ",stnhi,", or 0 for all - recommended =",stnhi,": ")
 while (is.na(nstn) || nstn < 0L || nstn > stnhi) {
@@ -80,7 +80,7 @@ if (nstn == 0L) nstn <- stnhi
 # Allow the full range of years but effectively recommend the climatological period
 # Without a minimum threshold, the user can generate contradictory messages
 
-cat("\nThe ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
+cat("The ET-NCMP recommends a variogram period of",yvlo,"-",yvhi,fill=TRUE)
 yr1 <- yrlo
 yr2 <- yrhi
 nyb <- 0L
@@ -104,7 +104,7 @@ while (is.na(nye) || nye < yr1 || nye > yr2) {
 # Which diagnostic to compute
 # Removed the option to process all diagnostics in one run of the script
 
-cat("\nPlease note that this program is heavily computational.",
+cat("Please note that this program is heavily computational.",
     "It may require 30 minutes for one index for 100 stations.",
     "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
     "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
@@ -119,7 +119,7 @@ while (is.na(ne) || ne < 1L || ne > 8L) {
   ne <- readline("\nEnter the desired NCMP number (between 1 and 8) : ")
   ne <- as.integer(ne)
 }
-cat("Thank you. User input collected",fill=TRUE)
+cat("User input collected",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)
@@ -256,7 +256,7 @@ Graph <- c("Gaussian","Exponential","Spherical")  # Which variogram function to 
 
 pdf(filet[ne])
 #par(mfrow=c(5,3),mar=c(3,4,1,0),oma=c(1,1,1,1),cex=0.5,mgp=c(1.5,0.4,0),tcl=-0.2)
-par(mfrow=c(5,3),mar=c(2.5,4,1.5,0)+0.1,cex=0.5,mgp=c(1.5,0.4,0),tcl=-0.2)
+par(mfrow=c(5,3),mar=c(2.5,4,1.5,0.5)+0.1,cex=0.5,mgp=c(1.5,0.4,0),tcl=-0.2)
 
 for (nm in 1:13) {
   cat(nm,"\t",cnames[nm],fill=TRUE)
@@ -287,36 +287,56 @@ for (nm in 1:13) {
 
 # Set up start values for each parameter
 # s0 == the highest of the mean value of 60-80 and 80-100 percentile bins
-# TEST: Define n0 from binned data - mean over 0-20 percentile bins
-# TEST: r0 == 0.5*maximum range (within 250 - 1000 km) - same for each station
+# TEST: Define n0 from binned data - minimum over 0-20 percentile bins
+# TEST: Define s0 and r0 dependant on function to fit
+# TEST: Use 'port' algorithm and constrain parameters
+#     - This is a lot less prone to warnings, and seemingly as plausible
 
-  n0 <- max(0.01,0.95*mean(Bl[1:as.integer(.2*nbin)],na.rm=TRUE)) 
+  n0 <- max(0.01,0.95*min(Bl[1:as.integer(.2*nbin)],na.rm=TRUE)) 
+  sm <- max(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE)
   s1 <- mean(Bl[as.integer(.6*nbin):(as.integer(.8*nbin)-1L)],na.rm=TRUE)
-  s2 <- mean(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE) 
+  s2 <- mean(Bl[as.integer(.8*nbin):nbin],na.rm=TRUE)
   s0 <- max(s1,s2)
-  r0 <- max(250,min(1000,0.5*Dmax))
-  clist <- list(r=r0,s=s0)
+  plower <- c(n=0.001,r=100,s=0.5*s0)
+  pupper <- c(n=0.5*s0,r=3*Dmax,s=5*sm)
 
+# Gaussian
 #  clist <- list(n=0.01,r=600,s=s0)
-  mod1 <- nls(Bl~Gaussian(Dl,0,r,s),start=clist,
+  clist <- list(n=n0,r=Dmax,s=sm)
+#  mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
+#    control=nls.control(warnOnly=TRUE,maxiter=100))
+  mod1 <- nls(Bl~Gaussian(Dl,n,r,s),start=clist,
+    algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod1 <- coef(mod1)
 
+# Exponential - same start values as Gaussian
 # clist$r <- 400
-  mod2 <- nls(Bl~Exponential(Dl,0,r,s),start=clist,
+#  mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
+#    control=nls.control(warnOnly=TRUE,maxiter=100))
+  mod2 <- nls(Bl~Exponential(Dl,n,r,s),start=clist,
+    algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
   cmod2 <- coef(mod2)
 
+# Spherical
 # clist$r <- 800
-  mod3 <- nls(Bl~Spherical(Dl,0,r,s),start=clist,
+  clist <- list(n=n0,r=0.5*Dmax,s=s0)
+#  mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
+#    control=nls.control(warnOnly=TRUE,maxiter=100))
+ mod3 <- nls(Bl~Spherical(Dl,n,r,s),start=clist,
+    algorithm="port",lower=plower,upper=pupper,
     control=nls.control(warnOnly=TRUE,maxiter=100))
-  cmod3 <- coef(mod3)
+ cmod3 <- coef(mod3)
 
 # Copy fitted coefficients to n,r and s
+# Only constrain n if not using 'port' algorithm,
+# but should then ensure that r and s are also sensible
 
-  n <- c(0,0,0)
-  r <- c(cmod1[1],cmod2[1],cmod3[1])
-  s <- c(cmod1[2],cmod2[2],cmod3[2])
+  n <- c(cmod1[1],cmod2[1],cmod3[1])
+#  n <- pmax(c(cmod1[1],cmod2[1],cmod3[1]),0.01)
+  r <- c(cmod1[2],cmod2[2],cmod3[2])
+  s <- c(cmod1[3],cmod2[3],cmod3[3])
 
 # Calculate mean squared error for each fit
 
@@ -336,15 +356,17 @@ for (nm in 1:13) {
 
 # Plot binned data and best fit variogram
 # Commented out curves for all fitted variograms
-  maxBl <- max(Bl, na.rm = TRUE)
 
-  plot(Dl,Bl,xlab="Distance",ylab="Diff in Index",col="Blue", ylim=c(0,maxBl))  # Plot Dl and Bl
+  plot(Dl,Bl,xlim=c(0,1.05*Dmax),xaxs="i",ylim=c(0,1.05*max(Bl,na.rm=TRUE)),yaxs="i",
+    xlab="Distance",ylab="Diff in Index",col="Blue")
   title(cnames[nm],line=0.5)
 #  curve(get(Graph[1])(x,n[1],r[1],s[1]),col="green",add=TRUE)
 #  curve(get(Graph[2])(x,n[2],r[2],s[2]),col="green",add=TRUE)
 #  curve(get(Graph[3])(x,n[3],r[3],s[3]),col="green",add=TRUE)
 # Highlight best fit in red
-  curve(get(Graph[k])(x,n[k],r[k],s[k]),col="red",add=TRUE)
+  curve(get(Graph[k])(x,n[k],r[k],s[k]),0,Dmax,col="red",add=TRUE)
+# Default Spherical in black - but this function may not be the best for the data
+  curve(Spherical(x,clist$n,clist$r,clist$s),0,Dmax,col="black",lwd=0.5,add=TRUE)
 }
 dev.off()  # Close PDF file
 
@@ -359,7 +381,8 @@ dev.off()  # Close PDF file
 cat("Writing results",fill=TRUE)
 write.csv(X,file=filev[ne],row.names=FALSE)
 
-# It is probably useful to retain a "configuration" file for variograms
+# Retain configuration file to allow same station and period for each diagnostic
+# - not yet implemented, see P4_Region_Average.R
 
 namex <- file.path(folder,"P3_Configuration.txt")
 dy <- date()

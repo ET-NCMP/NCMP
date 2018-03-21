@@ -22,18 +22,31 @@
 
 # The use of the data.table package imposes requirements on the version of
 # R and data.table - test for this and advise the user
-# If package data.table is missing, packageVersion() will generate an error and stop
 
-if (getRversion() < "3.0.0") {
-  warning("R Version < 3.0.0 is not supported by this code - upgrade is recommended",call.=FALSE)
+cat("***** P1_Quality_Control.R *****",fill=TRUE)
+xx <- getRversion()
+if (xx < "3.2.2") {
+  cat("R Version",xx,"has not been tested with this code - upgrade is suggested",fill=TRUE)
 }
-if (packageVersion("data.table") < "1.9.6") {
-  warning("Package 'data.table' Version < 1.9.6 is not tested - upgrade is recommended",call.=FALSE)
+xx <- find.package("data.table",quiet=TRUE)  # Will cause an error for R < 2.13.0
+if (length(xx) == 0L) {
+  stop("Package 'data.table' is not installed - require Version >= 1.9.6",call.=FALSE)
+} else if (packageVersion("data.table") < "1.9.6") {
+  cat("Package 'data.table' Version < 1.9.6 has not been tested with this code - upgrade is suggested",fill=TRUE)
 }
-suppressPackageStartupMessages(library(data.table))                  # call library
+
+# Suppress warning messages
+# - these should be related to the version of R used to build the package on PC, and can be ignored
+
+op <- options(warn=-1)
+suppressPackageStartupMessages(library(data.table))
+cat("Successfully loaded packages",
+    "Quality Control for daily station time series",
+    "Note that output is indicative only - it is not used when calculating NCMP indices",sep='\n')
 
 ###################################################################################
 #    Gathers input info from the user                                             #
+# Still suppressing warning messages - about converting strings to integer        #
                                                                                   #
 inquiry <- function() {                   # start function, defined before called #
 # \n is escape sequence for new line - does this have a locale dependency?        #
@@ -41,45 +54,44 @@ inquiry <- function() {                   # start function, defined before calle
   x <- NA_real_                                                                   #
   while (is.na(x) || x < 0 || x > 200) {      # is x numeric and >= 1 and <= 200? #
     x <- readline("\nEnter the number of stations to be used (between 1 and 200, or 0 for all): ")
-    x <- suppressWarnings(as.numeric(x)) }                                        #
-# Allow for numeric rather than integer values - this requires a decimal point    #
-# and the easiest way is to do the conversion and suppress the warning            #
+    x <- as.numeric(x) }                                                          #
+# Allow for numeric rather than integer values                                    #
                                                                                   #
   uptx <- NA_real_                                                                #
   while (is.na(uptx) || uptx < -65 || uptx > 55) {                                #
     cat("Enter value (Celsius) to identify upper limit for maximum temperature")  #
     uptx <- readline("\n(between -65 and 55, example 40): ")                      #
-    uptx <- suppressWarnings(as.numeric(uptx)) }                                  #
+    uptx <- as.numeric(uptx) }                                                    #
                                                                                   #
   lotx <- NA_real_                                                                #
   while (is.na(lotx) || lotx < -65 || lotx > 55) {                                #
     cat("Enter value (Celsius) to identify lower limit for maximum temperature")  #
     lotx <- readline("\n(between -65 and 55, example -30): ")                     #
-    lotx <- suppressWarnings(as.numeric(lotx)) }                                  #
+    lotx <- as.numeric(lotx) }                                                    #
                                                                                   #
   uptn <- NA_real_                                                                #
   while (is.na(uptn) || uptn < -65 || uptn > 50) {                                #
     cat("Enter value (Celsius) to identify upper limit for minimum temperature")  #
     uptn <- readline("\n(between -65 and 50, example 25): ")                      #
-    uptn <- suppressWarnings(as.numeric(uptn)) }                                  #
+    uptn <- as.numeric(uptn) }                                                    #
                                                                                   #
   lotn <- NA_real_                                                                #
   while (is.na(lotn) || lotn < -65 || lotn > 50) {                                #
     cat("Enter value (Celsius) to identify lower limit for minimum temperature")  #
     lotn <- readline("\n(between -65 and 50, example -55): ")                     #
-    lotn <- suppressWarnings(as.numeric(lotn)) }                                  #
+    lotn <- as.numeric(lotn) }                                                    #
                                                                                   #
   pr <- -1                                                                        #
   while (is.na(pr) || pr < 100 || pr > 500) {   # is 500 mm a reasonable extreme? #
     cat("Enter value (mm) to identify daily precipitation outlier")               #
     pr <- readline("\n(between 100 and 500, example 300): ")                      #
-    pr <- suppressWarnings(as.numeric(pr)) }                                      #
+    pr <- as.numeric(pr) }                                                        #
                                                                                   #
   ts <- 0                                                                         #
   while (is.na(ts) || ts < 3 || ts > 7) {                                         #
     cat("Enter number of standard deviations to identify daily")                  #
     ts <- readline("\ntemperature outlier (between 3 and 7, example 6): ")        #
-    ts <- suppressWarnings(as.numeric(ts)) }                                      #
+    ts <- as.numeric(ts) }                                                        #
                                                                                   #
   c(x,uptx,lotx,uptn,lotn,pr,ts) } # combine variables                            #
 # Do not need explicit return at the end of a function                            #
@@ -88,7 +100,7 @@ inquiry <- function() {                   # start function, defined before calle
 ###################################################################################
 
 if (interactive()) a <- inquiry()        # ask if interactive call function inquiry
-#a <- c(112,40,-10,20,-30,500,5)                                  # use for testing
+#a <- c(112,40,-10,20,-30,500,5)                # used for testing Australian data
 nstn <- as.integer(a[1])                        # truncates after any decimal point
 txup <- a[2]
 txlo <- a[3]
@@ -96,6 +108,11 @@ tnup <- a[4]
 tnlo <- a[5]
 pmax <- a[6]
 tsd  <- a[7]
+
+cat("User input collected",fill=TRUE)
+
+# Turn warnings back on, but print immediately
+options(warn=1)
 
 ###################################################################################
 #    Create directory for output files and write header                           #
@@ -171,6 +188,7 @@ Ref1 <- round(Ref1,1)                                                           
                                                                                   #
 # Merge back to aid checking                                                      #
 # Should not need to reorder columns, but do need the rows in date order          #
+# This is due to merge() sorting columns by character, not integer                #
 data1 <- merge(data,Ref1,by=c("Mo","Day"))                                        #
 data1 <- data1[order(data1$Year,data1$Mo,data1$Day),]                             #
 data1 <- cbind(Station=Sout[i],data1,Error="none" )           # add extra columns #
@@ -258,3 +276,4 @@ if (any(ierr)) {                                                                
 
 }                                                                # End station loop
 cat("Quality control done!",fill=TRUE)
+options(op)
