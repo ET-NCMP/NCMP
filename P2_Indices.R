@@ -300,6 +300,22 @@ Clim.P <- ifelse(colSums(!is.na(Prec[ref,])) >= cthresh,colMeans(Prec[ref,],na.r
 cat("Calculated monthly climatologies",fill=TRUE)
 
 ###################################################################################
+#    Fill zeroes in precipitation climatology                                     #
+# Use full period to calculate an extended precipitation climatology              #
+# and fill zeroes in the shorter standard precipitation climatology if needed.    #
+# if it is still zero, set it to 0.1 mm                                           #
+###################################################################################
+ref_ext <- (Prec$Year >= 0 & Prec$Year <= 9999)
+Clim_ext.P <- ifelse(colSums(!is.na(Prec[ref_ext,])) >= cthresh,colMeans(Prec[ref_ext,],na.rm=TRUE),NA_real_)
+for (mn in 2:13) {
+    if (Clim.P[mn] == 0) { 
+       cat("Replacing zero in climatology period with average for full series",fill=TRUE)
+       Clim.P[mn] <- Clim_ext.P[mn]
+       if (Clim.P[mn] == 0) { Clim.P[mn] <- 0.1 }
+    }
+}
+
+###################################################################################
 #    Calculate the temperature anomaly for mean temp                              #
 # Subtract Climatology from each row                                              #
 # Note that NA, column names etc are taken care of, but leave Year unchanged      #
