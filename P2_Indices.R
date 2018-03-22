@@ -308,12 +308,15 @@ cat("Calculated monthly climatologies",fill=TRUE)
 ref_ext <- (Prec$Year >= 0 & Prec$Year <= 9999)
 Clim_ext.P <- ifelse(colSums(!is.na(Prec[ref_ext,])) >= cthresh,colMeans(Prec[ref_ext,],na.rm=TRUE),NA_real_)
 for (mn in 2:13) {
-    if (Clim.P[mn] == 0) { 
-       cat("Replacing zero in climatology period with average for full series",fill=TRUE)
-       Clim.P[mn] <- Clim_ext.P[mn]
-       if (Clim.P[mn] == 0) { Clim.P[mn] <- 0.1 }
-    }
+   if (!is.na(Clim.P[mn])) {
+      if (Clim.P[mn] == 0) { 
+         cat("Replacing zero in climatology period with average for full series",fill=TRUE)
+         Clim.P[mn] <- Clim_ext.P[mn]
+         if (Clim.P[mn] == 0) { Clim.P[mn] <- 0.1 }
+      }
+   }
 }
+
 
 ###################################################################################
 #    Calculate the temperature anomaly for mean temp                              #
