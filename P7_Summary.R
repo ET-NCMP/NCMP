@@ -67,24 +67,21 @@ options(warn=1)
 # Information for indices to process                                              #
 # Note that the Guidance only requires the extreme warm day and cold nights       #
 # - i.e. TX90p, TN10p Region averages and TXx, TNn and RXday1 absolute records    #
-# Make the others optional here, along with PrA as it is not clear whether the    #
-# Region average estimation is reliable for that variable                         #
 ###################################################################################
 # Names of input regional average files
 	
 tname <- clist.P4$tname
-elez <- c("TMA","PrAn","PrA","SPI","TX90p","TN90p","TX10p","TN10p")
+elez <- c("TMA","PrAn","PrA","SPI","TX90p","TN10p")
 folder <- "A4_Region_Average"
-# *** Hack for testing - should be tname
 filez <- file.path(folder,paste(tname,elez,"Region_Avg.csv",sep="_"))
-optionalz <- c(FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE)
+optionalz <- c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE)
 
 # Names of input count record files
 
-eler <- c("TXx","TXn","TNx","TNn","RXday1")
+eler <- c("TXx","TNn","RXday1")
 folder <- "A6_Count_Records"
 filer <- file.path(folder,paste(tname,eler,"Count_Record.csv",sep="_"))
-optionalr <- c(FALSE,TRUE,TRUE,FALSE,FALSE)
+optionalr <- c(FALSE,FALSE,FALSE)
 
 # Concatenate these into a single variable to enable a single loop
 
@@ -114,12 +111,21 @@ for (ne in seq_along(ele)) {
 
   if (ne <= 8L) {
     desc <- "Region Average"
-	vname1 <- "Index"
+	vname1 <- ""
   } else {
     desc <- "Count Record"
-	vname1 <- "Count"
+	vname1 <- ""
   }
   vnames <- paste(ele[ne],c(vname1,"No of Stns"))
+  propervnames <- c("NCMP1","No of Stns NCMP1",
+                    "NCMP2","No of Stns NCMP2",
+                    "NCMP2b","No of Stns NCMP2b",
+                    "NCMP3","No of Stns NCMP3", 
+                    "NCMP4","No of Stns NCMP4",
+                    "NCMP5","No of Stns NCMP5",
+                    "Tmax records","No of Stns reporting Tmax", 
+                    "Tmin records","No of Stns reporting Tmin",
+                    "Precip records","No of Stns reporting precip")
 
 # Check whether diagnostic has been calculated
 # If not, fill with the dummy table
@@ -129,18 +135,10 @@ for (ne in seq_along(ele)) {
     cat(desc,"has not been calculated for",ele[ne],fill=TRUE)
 	if (!optional[ne]) {
 	  cat("Summary file will be filled with missing values",fill=TRUE)
-	  names(Xdum)[3:4] <- vnames
+	  names(Xdum)[3:4] <- propervnames
 	  X <- merge(X,Xdum,by=c("Year","Month"))
 	  next
 	}
-  }
-
-# Ask if wish to skip the "optional" diagnostics
-
-  if (optional[ne]) {
-    cat(desc,ele[ne],"is optional for Summary file",fill=TRUE)
-	icheck <- readline("\nDo you wish to skip this diagnostic? (y/n) : ")
-	if (icheck == 'y') next
   }
 
 # Read in diagnostic, and extract the requested years
@@ -175,7 +173,7 @@ desc <- c("Total number of Stations",
           "Temperature Quality Control level","Precipitation Quality Control level",
           "Region Average grid resolution","Version")
 vals <- c(clist.P2$nstn,clist.P2$nyb,clist.P2$nye,clist.P2$QCT,clist.P2$QCPr,
-          clist.P4$res,2.0)
+          clist.P4$res,2017)
 mess <- paste(desc,vals,sep=" = ")
 
 # Write header and table to single file - generates a warning which can be ignored
