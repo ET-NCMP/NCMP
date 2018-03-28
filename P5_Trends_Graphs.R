@@ -145,8 +145,8 @@ folder <- "A5_Trends_Graphs"
 folder2 <- c("Graphs_Annual_Station","Maps_Annual_Station","Graphs_Annual_Region")
 nybt <- c(nyb,nyb,nyba)
 nyet <- c(nye,nye,nyea)
-dirs <- file.path(folder,paste(folder2,nybt,nyet,sep="_"))  # adds separator "/"
-for (dname in dirs) dir.create(dname,showWarnings=FALSE,recursive=TRUE)
+odirs <- file.path(folder,paste(folder2,nybt,nyet,sep="_"))  # adds separator "/"
+for (dname in odirs) dir.create(dname,showWarnings=FALSE,recursive=TRUE)
 cat("Directories successfully created",fill=TRUE)
 
 ###################################################################################
@@ -219,7 +219,7 @@ title <- paste("(",letters[1:ntrend],") ",gsub("_"," ",ele3),sep="")
 
 # Output PDF file names by station
 
-namep <- file.path(dirs[1],paste(Station,"_Annual.pdf",sep=""))
+namep <- file.path(odirs[1],paste(Station,"_Annual.pdf",sep=""))
 
 sq <- seq(from=2,to=ntrend*2,by=2) # sequence of even numbers
 
@@ -345,7 +345,7 @@ latrng <- range(Dt[,2])
 ylim <- c(floor(latrng[1]),ceiling(latrng[2]))
 
 # Names of maps produced - why JPEG and not PDF as per other graphs?
-mapf <- file.path(dirs[2],paste("Map_",c("Stns",ele2),"_Annual.jpg",sep=""))
+mapf <- file.path(odirs[2],paste("Map_",c("Stns",ele2),"_Annual.jpg",sep=""))
 
 # Prec normalised anomaly (2) is %
 # Need to check/set the units for the last 4 indices
@@ -435,7 +435,7 @@ filez <- file.path("A4_Region_Average",paste(tname,ele,"Region_Avg.csv",sep="_")
 
 # Names of output regional average graphs
 
-namep <- file.path(dirs[3],paste(tname,ele,"Annual.pdf",sep="_"))
+namep <- file.path(odirs[3],paste(tname,ele,"Annual.pdf",sep="_"))
 
 # Titles of graphs
 
