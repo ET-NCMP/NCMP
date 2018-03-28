@@ -28,7 +28,7 @@ Please read the documentation (R_NCMPs_User_Manual.docx)
 
 ## Contributors
 
-The code was originally developed by Lucie Vincent and Megan Hartwell from the Climate Research Division of Environment and Climate Change Canada. The ET-NCMP would like to thank Simon Grainger and James Adams for their important contributions to the development and testing of the computer routines. More information on the work of the Expert Team ET-NCMP can be found at their web page http://www.metoffice.gov.uk/hadobs/opace2_tt_ncmp/
+The code was originally developed by Lucie Vincent and Megan Hartwell from the Climate Research Division of Environment and Climate Change Canada. The code was significantly rewritten and is currently maintained by Simon Grainger at the Bureau of Meteorology in Australia. All members of the ET-NCMP contributed to the testing of the code. The ET-NCMP would also like to thank James Adams for his important contributions to the testing of the computer routines. More information on the work of the Expert Team ET-NCMP can be found at their web page http://www.metoffice.gov.uk/hadobs/opace2_tt_ncmp/
 
 ## License
 
