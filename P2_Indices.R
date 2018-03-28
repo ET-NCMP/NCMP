@@ -246,15 +246,16 @@ data <- read.table(file1[i],header=FALSE,na.strings="-99.9",comment.char="",
 #    Find mean temperature and monthly values                                     #
 ###################################################################################
 
-Tm <- (data[,"Tx"] + data[,"Tn"])/2.0                                 # Mean temp
+Tm <- (data[,"Tx"] + data[,"Tn"])/2.0
 data <- data.table(data,Tm)
+
 # Copy for creating monthly values
 data1 <- data
-data1$Prec[data1$Prec < 1] <- 0                 # replace prec less than 1 with 0
+data1$Prec[data1$Prec < 1] <- 0  # replace prec less than 1 with 0
 
 # Calculate monthly values where missing days are below the threshold
 # Would be desirable to allow for leap years, but this would be rather harder
-# as need to account for partial months and years
+# as need to account for partial months and years 
 
 Month <- data1[,.(
      Pr=ifelse(Days[Mo]-sum(!is.na(Prec)) > missm,NA_real_,sum(Prec,na.rm=TRUE)),
@@ -269,8 +270,8 @@ Year <- data1[,.(
 # This now explictly uses data.table::dcast >= 1.9.6
 
 Month.Y <- dcast(Month,Year~Mo,value.var=c("Pr","Tm"),sep=".",fill=NA)
-Month.Y <- merge(Month.Y,Year,by="Year")
-Month.Y <- round(Month.Y,2)                             # round table to 2 digits
+Month.Y <- merge(Month.Y,Year,by="Year")  # No need to sort (in all locales?)
+Month.Y <- round(Month.Y,2)  # round table to 2 digits
 
 # Having dcast multiple variables, split them back up for further processing
 # This seems to be the only way to evaluate the correct column names
@@ -284,9 +285,10 @@ Temp <- Month.Y[,colt,with=FALSE]
 colnames(Temp) <- cnames
 
 # Write output files
+
 write.csv(Prec,file=namex[5],row.names=FALSE,na="-99.9")
 write.csv(Temp,file=namex[1],row.names=FALSE,na="-99.9")
-cat("Written monthly totals",fill=TRUE)
+cat("Calculated and written monthly and annual totals",fill=TRUE)
 
 ###################################################################################
 #    Calculate climatology for mean temp and avg prec                             #
@@ -297,7 +299,7 @@ cat("Written monthly totals",fill=TRUE)
 ref <- (Prec$Year >= nybr & Prec$Year <= nyer)
 Clim.T <- ifelse(colSums(!is.na(Temp[ref,])) >= cthresh,colMeans(Temp[ref,],na.rm=TRUE),NA_real_)
 Clim.P <- ifelse(colSums(!is.na(Prec[ref,])) >= cthresh,colMeans(Prec[ref,],na.rm=TRUE),NA_real_)
-cat("Calculated monthly climatologies",fill=TRUE)
+cat("Calculated monthly and annual climatologies",fill=TRUE)
 
 ###################################################################################
 #    Fill zeroes in precipitation climatology                                     #
@@ -322,8 +324,8 @@ for (mn in 2:13) {
 #    Calculate the temperature anomaly for mean temp                              #
 # Subtract Climatology from each row                                              #
 # Note that NA, column names etc are taken care of, but leave Year unchanged      #
-# Utilises R vector recycling, but need to transpose Temp to do this              #
 ###################################################################################
+# Utilises R vector recycling, but need to transpose Temp to do this
 
 Clim.T[1] <- 0
 Temp.Anom <- round(t(t(Temp) - Clim.T),2)
@@ -333,7 +335,6 @@ write.csv(Temp.Anom,file=namex[2],row.names=FALSE,na="-99.9")
 ###################################################################################
 #    Calculate the precipitation ratios and anomalies                             #
 # This is a bit more difficult to deal with the Year column                       #
-# Would like to deal with the case of climatological rainfall == 0                #
 ###################################################################################
 
 Clim.P[1] <- 100
@@ -346,18 +347,21 @@ Prec.Nor.Anom[,"Year"] <- Prec.Anom[,"Year"]
 write.csv(Prec.Rat,file=namex[6],row.names=FALSE,na="-99.9")
 write.csv(Prec.Anom,file=namex[3],row.names=FALSE,na="-99.9") 
 write.csv(Prec.Nor.Anom,file=namex[4],row.names=FALSE,na="-99.9")
-cat("Written anomalies and precipitation ratios",fill=TRUE)
+cat("Calculated and written precipitation anomalies and ratios",fill=TRUE)
 
 
 ###################################################################################
 #    Calculate the standardized precpitation index                                #
 ###################################################################################
+# Currrently replacing zeroes with NA to get the correct log values
+# But this results in zero monthly rainfall with missing SPI - probably not right
+# The PZero variable suggests that this can be better handled
+# Also can investigate definitions suitable for arid climates
 
-nyrs <- nrow(Prec)                # get dim of Prec; Prec mon values when dly >=1
-Prec2 <- Prec[,-1,with=FALSE]          # Exclude Year column from Prec data.table
-PZero <- colSums(Prec2==0,na.rm=TRUE)/nyrs          # Find percentage of 0 values
-                                             # Prec2==0 : if prec=0, count values
-Prec2[Prec2 == 0] <- NA      # Replace zeroes with NA to exclude from calculation
+nyrs <- nrow(Prec)            # get dim of Prec; Prec monthly total when daily >=1
+Prec2 <- Prec[,-1,with=FALSE] # Exclude Year column
+PZero <- colSums(Prec2==0,na.rm=TRUE)/nyrs # fraction of 0 values, by counting
+Prec2[Prec2 == 0] <- NA
 
 A <- log(colMeans(Prec2,na.rm=TRUE))-colMeans(log(Prec2),na.rm=TRUE)
 Alpha <- ((1+sqrt(1+4*A/3))/(4*A))          # Find alpha parameter for each month
@@ -390,7 +394,7 @@ Mo <- as.integer(sapply(dd,"[[",2))
 # This setup allows for looping over the percentile variables
 # 1 = Warm days, 2 = Warm nights, 3 = Cold days, 4 = Cold nights
 
-for (ix in 8:11) { # loop over elements
+for (ix in 8:11) {
   ne <- ele[ix]
 
 # Calculate monthly and annual percentages for this diagnostic - round to 2dp
@@ -398,7 +402,7 @@ for (ix in 8:11) { # loop over elements
   NCMP45.M <- round(percent.days.op.threshold.mod(D,"monthly",ne),2)
   NCMP45.Y <- round(percent.days.op.threshold.mod(D,"annual",ne),2)
 
-# Merge monthly and annual values by casting monthly table into years
+# Combine monthly and annual values by casting monthly table into years
 
   NCMP45 <- data.table(Year,Mo,NCMP45.M)
   NCMP45 <- dcast(NCMP45,Year~Mo,value.var="NCMP45.M")
@@ -408,16 +412,15 @@ for (ix in 8:11) { # loop over elements
 
   colnames(NCMP45) <- cnames
   write.csv(NCMP45,file=namex[ix],row.names=FALSE,na="-99.9")
-} # End loop over indices
+}
+cat("Calulated and written percentile indices: Warm/Cold Day/Night",fill=TRUE)
 
-cat("Calulated and written Warm/Cold Day/Night indices",fill=TRUE)
-###################################################################################
 
 ###################################################################################
 #    Calculate the Highest and Lowest Values Tx, Tn and RX1                       #
 # This is known to cause problems with extended periods of missing data,          #
 # and currently prevents the use of precipitation-only stations                   #
-# This is probably caused by which.max/min() returning integer(0)                 # 
+# This is probably caused by which.max/min() returning integer(0)                 #
 # when no data is valid for that month/year                                       #
 # This also defines monthly extreme if *any* value is present, as opposed to      #
 # applying missing value limits for monthly mean/totals                           #
@@ -426,6 +429,7 @@ cat("Calulated and written Warm/Cold Day/Night indices",fill=TRUE)
 # Another alternative is calculate these alongside the basic monthly indices      #
 # in the data.table object - although that might get a bit messy                  #
 ###################################################################################
+
 # Retain only the Day and value in each row (or add dateMD/DY if used)
 # If extreme monthly precipitation is zero, sensible to set day index to missing
 
@@ -447,15 +451,15 @@ dummy <- data.table(Year=c(yrs[1]:yrs[2],"xxxx"),t(rep(NA,13)))
 # order lines up with the indices as defined by "ele"
 
 listVX <- list(RX1X,TxXX,TnXX,TxNN,TnNN)
-rn <- c("HiPr","HiTx","HiTn","LoTx","LoTn")          # row names for end of table
+rn <- c("HiPr","HiTx","HiTn","LoTx","LoTn")       # row names for end of table
 colV <- c("Year",paste("Var",1:12,sep="_"),"Var") # Std column names for variable
 colD <- c("Year",paste("Day",1:12,sep="_")) # Standard column names for day index
 
-for (ne in 1:5) { # Loop over records
-  ix <- ne*2L + 10L                          # offset into "namex" for file names
-  VarX <- listVX[[ne]]                                    # copy of records table
-  colnames(VarX)[4] <- "Var"    # standard data column name - works in data.table
-  if (nrow(RX1X) == 0L) {
+for (ne in 1:5) {
+  ix <- ne*2L + 10L          # offset into "namex" for file names
+  VarX <- listVX[[ne]]       # copy of records table
+  colnames(VarX)[4] <- "Var" # standard data column name - works in data.table
+  if (nrow(VarX) == 0L) {
     dummy[nrow(dummy),1] <- rn[ne]
     Var <- dummy
     Var.D <- dummy
@@ -495,7 +499,7 @@ for (ne in 1:5) { # Loop over records
     Var <- rbind(Var,xx)
     xx <- c(rn[ne],as.list(MVarX[,Year]),month.abb[Var.MY[1]])
     Var.D <- rbind(Var.D,xx)
-  } # Ends if (no data)
+  }
 
 # Write extreme and day index to file
 
@@ -503,9 +507,8 @@ for (ne in 1:5) { # Loop over records
   colnames(Var.D) <- cnames
   write.csv(Var,file=namex[ix+1L],row.names=FALSE,na="-99.9")
   write.csv(Var.D,file=namex[ix],row.names=FALSE,na="-99")    # was missing == 99
-} # Ends loop for indices
-
-cat("Calculated and written extremes values",fill=TRUE)
+}
+cat("Calculated and written extremes",fill=TRUE)
 
 }
 

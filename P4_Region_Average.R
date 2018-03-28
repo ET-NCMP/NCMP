@@ -193,7 +193,8 @@ if (icheck == 1L) {
 # Which diagnostic to compute
 # Removed the option to process all diagnostics in one run of the script
 
-cat("\nPlease note that this program is heavily computational. It may require one hour for one index for 100 stations.",
+cat("\nPlease note that this program is heavily computational.",
+    "It may require one hour for one index for 100 stations.",
     "For NCMP 1, Monthly Mean Temperature Anomaly, enter 1.",
     "For NCMP 2, Monthly Total Precipitation Anomaly Normalized, enter 2.",
     "For NCMP 2, Monthly Total Precipitation Anomaly , enter 3.",
@@ -202,7 +203,6 @@ cat("\nPlease note that this program is heavily computational. It may require on
     "For NCMP 4, Percentage of Warm Nights, enter 6.",
     "For NCMP 5, Percentage of Cold Days, enter 7.",
     "For NCMP 5, Percentage of Cold Nights, enter 8.",sep="\n")
-# Bugfix: Ensure that can calculate all 8 diagnostics individually
 ne <- NA_integer_
 while (is.na(ne) || ne < 1L || ne > 8L) {
   ne <- readline("\nEnter the desired NCMP number (between 1 and 8) : ")

@@ -41,8 +41,6 @@ cat("Generate the Summary file as given in the WMO ET-NCMP Guidance",fill=TRUE)
 ylo <- clist.P4$nyb
 yhi <- clist.P4$nye
 
-
-
 cat("The ET-NCMP recommends a Summary file period of",ylo,"-",yhi,fill=TRUE)
 nyb <- 0L
 mess <- paste("\nbetween",ylo,"and",yhi,"- recommended =",ylo,": ")
@@ -55,12 +53,12 @@ while (is.na(nyb) || nyb < ylo || nyb > yhi) {
 nye <- 0L
 mess <- paste("\nbetween",nyb,"and",yhi,"- recommended =",yhi,": ")
 while (is.na(nye) || nye < nyb || nye > yhi) {
-  cat("Enter ending year for count period")
+  cat("\nEnter ending year for Summary file period")
   nye <- readline(mess)
   nye <- as.integer(nye)
 }
 nyrs <- nye-nyb+1L
-cat("User input collected. Thank you.",fill=TRUE)
+cat("Thank you. User input collected.",fill=TRUE)
 
 # Turn warnings back on, but print immediately
 options(warn=1)
