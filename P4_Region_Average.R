@@ -132,7 +132,7 @@ if (icheck == 1L) {
   tcode <- NA_character_
 
   while (!is.element(tcode,wrld_simpl@data[,"ISO3"]) && !is.element(tcode,c("REG"))) {
-      tcode <- readline("\nEnter Country or Region to process: ")
+      tcode <- readline("\nEnter Country code or 0 to process a region: ")
 
       if (tcode == 0L) {
           tcode = "REG"
