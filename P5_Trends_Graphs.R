@@ -154,9 +154,9 @@ cat("Directories successfully created",fill=TRUE)
 ###################################################################################
 
 ncmpn <- c(1L,2L,3L,6L,5L,4L,5L,4L,6L,6L,6L,6L,1L,2L,2L,2L)
-folder <- "A2_Indices"
-folder2 <- paste("NCMP",ncmpn,sep="")
-folder3 <- c("Monthly_Mean_Temp_Anom","Monthly_Total_Prec_Anom_Norm",
+folderi <- "A2_Indices"
+folderi2 <- paste("NCMP",ncmpn,sep="")
+folderi3 <- c("Monthly_Mean_Temp_Anom","Monthly_Total_Prec_Anom_Norm",
          "Standard_Prec_Index","Extreme_Prec",
          "Cold_Days","Warm_Days",
          "Cold_Nights","Warm_Nights",
@@ -164,7 +164,7 @@ folder3 <- c("Monthly_Mean_Temp_Anom","Monthly_Total_Prec_Anom_Norm",
          "Extreme_Cold_Night","Extreme_Warm_Night",
          "Monthly_Mean_Temp","Monthly_Total_Prec",
          "Monthly_Total_Prec_Anom","Monthly_Total_Prec_Ratio")
-dirs <- file.path(folder,folder2,folder3)  # adds separator "/"
+dirs <- file.path(folderi,folderi2,folderi3)  # adds separator "/"
 
 # Element relating to NCMP Index
 
